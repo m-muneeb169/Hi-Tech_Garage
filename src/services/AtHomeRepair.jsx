@@ -1,179 +1,236 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Wrench, Shield, Home, Star, CheckCircle, Phone, Settings, ArrowRight } from 'lucide-react';
+import React from 'react';
+import {
+  Calendar,
+  Clock,
+  Wrench,
+  Shield,
+  Home,
+  Phone,
+  Settings,
+  ArrowRight
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 import Sidenavbar from '../components/sidenavbar';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import { Link } from 'react-router-dom';
+import '@fontsource/barlow/700.css';
+import '@fontsource/open-sans/400-italic.css';
+
+// Animation variants
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 const AtHomeRepair = () => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-800 overflow-x-hidden">
       <Sidenavbar />
-      <Link to="/"><Header /></Link>
+      <Link to="/">
+        <Header />
+      </Link>
+
       {/* Hero Section */}
-      <div className="relative h-[60vh] bg-gradient-to-r from-blue-900 to-black flex items-center justify-center">
-  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div className={`max-w-2xl text-center ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-      <h1 className="text-5xl font-bold text-white mb-6">Professional Auto Repair at Your Doorstep</h1>
-      <p className="text-xl text-white mb-8">
-      Expert mechanics bring the workshop to your home. Convenient, reliable, and professional service.
-      </p>
-      <button className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
-      Schedule Service
-      </button>
-    </div>
-  </div>
-</div>
+      <section className="relative h-[70vh] bg-gradient-to-r from-blue-900 to-black flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            transition={{ duration: 0.8 }}
+            className="max-w-3xl text-center px-6"
+          >
+            <motion.h1 
+              variants={fadeUp}
+              className="text-5xl md:text-6xl font-bold text-white mb-6 font-['Barlow'] tracking-tight leading-tight"
+            >
+              AUTO REPAIR <span className="text-blue-300">AT YOUR DOORSTEP</span>
+            </motion.h1>
+            <motion.p 
+              variants={fadeUp}
+              className="text-lg md:text-xl text-white/90 mb-8 font-['Open_Sans'] italic"
+            >
+              "Professional service delivered right to your driveway"
+            </motion.p>
+            <motion.div variants={fadeUp}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400 }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-['Barlow'] font-semibold tracking-wide flex items-center mx-auto"
+              >
+                <Calendar className="w-5 h-5 mr-2" />
+                SCHEDULE SERVICE
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Benefits Section */}
-      <div className="py-20 bg-white">
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16 text-blue-900">Why Choose At-Home Repair</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold text-blue-900 font-['Barlow'] tracking-tight">WHY CHOOSE US</h2>
+            <div className="w-24 h-1 bg-blue-600 mt-4 mx-auto"></div>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+            className="grid md:grid-cols-3 gap-8"
+          >
             {[
-              { icon: <Home className="w-12 h-12 text-blue-600" />, title: "Comfort & Convenience", description: "No need to visit a workshop - we bring our expertise to your location" },
-              { icon: <Clock className="w-12 h-12 text-blue-600" />, title: "Time-Saving", description: "Save time and effort with our mobile repair service" },
-              { icon: <Shield className="w-12 h-12 text-blue-600" />, title: "Quality Guaranteed", description: "Professional service with warranty on parts and labor" }
-            ].map((benefit, index) => (
-              <div key={index} className="bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300">
-                <div className="mb-4">{benefit.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
-                <p className="text-gray-600">{benefit.description}</p>
-              </div>
+              { icon: <Home size={28} />, title: 'COMFORT & CONVENIENCE', description: 'We bring the garage to your home — zero hassle.' },
+              { icon: <Clock size={28} />, title: 'TIME-SAVING', description: 'Book in minutes, get service without leaving home.' },
+              { icon: <Shield size={28} />, title: 'QUALITY GUARANTEED', description: 'Skilled mechanics and genuine parts, always.' }
+            ].map((benefit, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="bg-gray-100 p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-200"
+              >
+                <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  {benefit.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-blue-900 text-center font-['Barlow']">{benefit.title}</h3>
+                <p className="text-gray-600 text-center font-['Open_Sans']">{benefit.description}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
       {/* Services Section */}
-      <div className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16 text-blue-900">Our At-Home Services</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { icon: <Settings className="w-8 h-8 text-blue-600" />, title: "Engine Diagnostics", description: "Complete computer diagnostics and troubleshooting" },
-              { icon: <Wrench className="w-8 h-8 text-blue-600" />, title: "Regular Maintenance", description: "Oil changes, filters, and routine services" },
-              { icon: <Shield className="w-8 h-8 text-blue-600" />, title: "Brake Service", description: "Brake pad replacement and brake system repair" },
-              { icon: <Settings className="w-8 h-8 text-blue-600" />, title: "Battery Service", description: "Battery testing, charging, and replacement" },
-              { icon: <Wrench className="w-8 h-8 text-blue-600" />, title: "AC Service", description: "AC repair, recharge, and maintenance" },
-              { icon: <Shield className="w-8 h-8 text-blue-600" />, title: "Electrical Repair", description: "Electrical system diagnostics and repair" }
-            ].map((service, index) => (
-              <div key={index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
-                <div className="flex items-center mb-4">
-                  {service.icon}
-                  <h3 className="text-xl font-semibold ml-3">{service.title}</h3>
-                </div>
-                <p className="text-gray-600 mb-4">{service.description}</p>
-                <button className="text-blue-600 flex items-center hover:text-blue-800 transition duration-300">
-                  Learn More <ArrowRight className="w-4 h-4 ml-2" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold text-blue-900 font-['Barlow'] tracking-tight">OUR SERVICES</h2>
+            <div className="w-24 h-1 bg-blue-600 mt-4 mx-auto"></div>
+          </motion.div>
 
-      {/* Process Section */}
-      <div className="py-20 bg-blue-900 text-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16">How Our At-Home Service Works</h2>
-          <div className="grid md:grid-cols-4 gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-10"
+          >
             {[
-              { step: 1, title: "Book Online", description: "Schedule a convenient time for service" },
-              { step: 2, title: "Mechanic Arrives", description: "Our certified mechanic comes to your location" },
-              { step: 3, title: "Inspection & Quote", description: "Thorough inspection and transparent pricing" },
-              { step: 4, title: "Service Complete", description: "Professional repair with warranty" }
-            ].map((step, index) => (
-              <div key={index} className="relative text-center">
-                <div className="w-16 h-16 bg-white text-blue-900 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  {step.step}
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                <p className="text-blue-100">{step.description}</p>
-                {index < 3 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-blue-700 -z-10"></div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Testimonials */}
-      <div className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16 text-blue-900">What Our Customers Say</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { name: "Hassan R.", location: "Karachi", text: "The convenience of having my car serviced at home is unmatched. Excellent service!" },
-              { name: "Amina S.", location: "Lahore", text: "Very professional mechanics. They explained everything and completed the work efficiently." },
-              { name: "Usman M.", location: "Islamabad", text: "Great experience! The mechanic was punctual and very knowledgeable." }
-            ].map((testimonial, index) => (
-              <div key={index} className="bg-gray-50 p-6 rounded-lg shadow-md">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-4">"{testimonial.text}"</p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
-                    {testimonial.name.charAt(0)}
+              { icon: <Settings size={20} />, title: 'ENGINE DIAGNOSTICS', description: 'Computer-based issue detection & solutions.' },
+              { icon: <Wrench size={20} />, title: 'MAINTENANCE', description: 'Oil change, filters, and full servicing.' },
+              { icon: <Shield size={20} />, title: 'BRAKE SERVICE', description: 'Brake pad change & repairs with warranty.' },
+              { icon: <Settings size={20} />, title: 'BATTERY', description: 'Battery checks, jumpstarts, and replacement.' },
+              { icon: <Wrench size={20} />, title: 'AC REPAIR', description: 'Cooling system cleaning and gas recharge.' },
+              { icon: <Shield size={20} />, title: 'ELECTRICAL FIXES', description: 'All wiring & system error corrections.' }
+            ].map((service, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-200"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                    {service.icon}
                   </div>
-                  <div>
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-sm text-gray-500">{testimonial.location}</p>
-                  </div>
+                  <h3 className="text-lg font-semibold text-blue-800 font-['Barlow']">{service.title}</h3>
                 </div>
-              </div>
+                <p className="text-gray-600 mb-4 font-['Open_Sans']">{service.description}</p>
+                <motion.button 
+                  whileHover={{ x: 3 }}
+                  className="text-blue-600 hover:text-blue-800 flex items-center font-medium transition-colors duration-300 font-['Barlow']"
+                >
+                  LEARN MORE <ArrowRight className="ml-2 w-4 h-4" />
+                </motion.button>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* Booking CTA */}
-      <div className="py-20 bg-gradient-to-r from-blue-900 to-black text-white">
+      {/* CTA Section */}
+      <motion.div 
+        className="py-24 bg-gradient-to-r from-blue-900 to-black text-white"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-8">Ready to Book Your At-Home Service?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Professional auto repair and maintenance at your convenience
-          </p>
-          <div className="flex flex-col md:flex-row justify-center items-center gap-4">
-            <button className="bg-white text-blue-900 px-8 py-3 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center">
+          <motion.h2 
+            className="text-5xl font-bold mb-6 font-['Barlow'] tracking-tighter"
+            initial={{ y: 20 }}
+            whileInView={{ y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-blue-300">READY</span> TO BOOK?
+          </motion.h2>
+          
+          <motion.p
+            className="text-xl mb-10 max-w-2xl mx-auto font-['Open_Sans'] italic text-blue-100 leading-relaxed"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+          >
+            "Get premium car care without leaving home"
+          </motion.p>
+          
+          <motion.div 
+            className="flex flex-col md:flex-row justify-center items-center gap-4"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-white text-blue-900 px-8 py-4 rounded-lg hover:bg-gray-100 transition-all duration-300 flex items-center font-['Barlow'] font-semibold tracking-wide uppercase text-sm"
+            >
               <Calendar className="w-5 h-5 mr-2" />
-              Schedule Now
-            </button>
-            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center">
+              BOOK SERVICE
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-transparent text-white border-2 border-blue-400 px-8 py-4 rounded-lg hover:bg-blue-900/30 transition-all duration-300 flex items-center font-['Barlow'] font-medium tracking-wide"
+            >
               <Phone className="w-5 h-5 mr-2" />
-              Call Us
-            </button>
-          </div>
+              CALL OUR EXPERTS
+            </motion.button>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Service Areas */}
-      <div className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16 text-blue-900">Service Areas</h2>
-          <div className="grid md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {[
-              "Karachi", "Lahore", "Islamabad", "Rawalpindi",
-              "Faisalabad", "Multan", "Peshawar", "Quetta"
-            ].map((city, index) => (
-              <div key={index} className="flex items-center bg-white p-4 rounded-lg shadow-sm">
-                <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
-                <span>{city}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
       <Footer />
     </div>
   );
