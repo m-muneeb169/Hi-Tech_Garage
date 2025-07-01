@@ -68,7 +68,7 @@ const AslamDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
 
-const currentWorkshopId = auth.currentUser?.uid;
+  const currentWorkshopId = auth.currentUser?.uid;
 
 
   //location map
@@ -276,100 +276,6 @@ const currentWorkshopId = auth.currentUser?.uid;
 
     fetchConfirmedEmergencies();
   }, []);
-
-
-
-  // useEffect(() => {
-  //   const fetchConfirmedEmergencies = async () => {
-  //     setLoading(true); // Add loading state
-  //     try {
-  //       console.log("Fetching confirmed emergencies...");
-
-  //       // Get all users from Firestore
-  //       const usersSnapshot = await getDocs(collection(db, "users"));
-  //       const confirmedList = [];
-
-  //       console.log(`Found ${usersSnapshot.size} users in database`);
-
-  //       usersSnapshot.forEach(doc => {
-  //         const userData = doc.data();
-  //         const userId = doc.id;
-
-  //         console.log(`Processing user: ${userId}`, userData);
-
-  //         // Check if user has emergency array
-  //         if (userData.emergency && Array.isArray(userData.emergency)) {
-  //           console.log(`User ${userId} has ${userData.emergency.length} emergency entries`);
-
-  //           userData.emergency.forEach((emergency, emergencyIndex) => {
-  //             console.log(`Processing emergency ${emergencyIndex}:`, emergency);
-
-  //             // Check if emergency has location array
-  //             if (emergency.location && Array.isArray(emergency.location)) {
-  //               emergency.location.forEach((loc, locationIndex) => {
-  //                 console.log(`Processing location ${locationIndex}:`, loc);
-
-  //                 // If status is confirmed, add user details
-  //                 if (loc.status === "confirmed") {
-  //                   console.log(`Found confirmed booking for user: ${userData.email}`);
-
-  //                   confirmedList.push({
-  //                     userId: userId,
-  //                     userEmail: userData.email || "No Email",
-  //                     userName: userData.name || userData.firstName || "No Name",
-  //                     userPhone: userData.phone || userData.phoneNumber || "No Phone",
-  //                     address: loc.address || "No Address",
-  //                     emergencyType: emergency.type || "Emergency",
-  //                     confirmedAt: loc.confirmedAt || new Date().toISOString(),
-  //                     locationIndex: locationIndex,
-  //                     emergencyIndex: emergencyIndex
-  //                   });
-  //                 }
-  //               });
-  //             } else {
-  //               // If emergency has direct status (alternative structure)
-  //               if (emergency.status === "confirmed") {
-  //                 console.log(`Found confirmed emergency (direct status) for user: ${userData.email}`);
-
-  //                 confirmedList.push({
-  //                   userId: userId,
-  //                   userEmail: userData.email || "No Email",
-  //                   userName: userData.name || userData.firstName || "No Name",
-  //                   userPhone: userData.phone || userData.phoneNumber || "No Phone",
-  //                   address: emergency.address || "No Address",
-  //                   emergencyType: emergency.type || "Emergency",
-  //                   confirmedAt: emergency.confirmedAt || new Date().toISOString(),
-  //                   emergencyIndex: emergencyIndex
-  //                 });
-  //               }
-  //             }
-  //           });
-  //         }
-  //       });
-
-  //       console.log(`Total confirmed emergencies found: ${confirmedList.length}`);
-  //       console.log("Confirmed emergencies list:", confirmedList);
-
-  //       // Sort by confirmation date (newest first)
-  //       confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
-
-  //       setConfirmedEmergencies(confirmedList);
-  //     } catch (error) {
-  //       console.error("Error fetching confirmed emergencies:", error);
-  //       setConfirmedEmergencies([]); // Set empty array on error
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchConfirmedEmergencies();
-  // }, []);
-
-
-
-
-
-
 
   useEffect(() => {
     const unsubscribers = [];
@@ -1790,32 +1696,6 @@ const currentWorkshopId = auth.currentUser?.uid;
                     {/* Bookings content goes here */}
                   </div>
 
-                  {/* <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-  <h2 className="text-xl font-semibold mb-4">Your Booked Emergency Users</h2>
-  {loading ? (
-    <p className="text-gray-500">Loading confirmed bookings...</p>
-  ) : confirmedEmergencies.length === 0 ? (
-    <p className="text-gray-500">No confirmed bookings yet.</p>
-  ) : (
-    <ul className="space-y-4">
-      {confirmedEmergencies.map((user, index) => (
-        <li key={index} className="border rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-colors">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <p><strong className="text-green-700">Email:</strong> <span className="text-gray-800">{user.userEmail}</span></p>
-            <p><strong className="text-green-700">Name:</strong> <span className="text-gray-800">{user.userName}</span></p>
-            <p><strong className="text-green-700">Phone:</strong> <span className="text-gray-800">{user.userPhone}</span></p>
-            <p className="md:col-span-2"><strong className="text-green-700">Address:</strong> <span className="text-gray-800">{user.address}</span></p>
-          </div>
-          <div className="mt-2 text-xs text-gray-500">
-            Status: <span className="text-green-600 font-medium">Confirmed</span>
-          </div>
-        </li>
-      ))}
-    </ul>
-  )}
-</div> */}
-
-
                   <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
                     <h2 className="text-xl font-semibold mb-4">Your Booked Emergency Users</h2>
                     {loading ? (
@@ -1879,46 +1759,6 @@ const currentWorkshopId = auth.currentUser?.uid;
                       </ul>
                     )}
                   </div>
-
-
-
-
-
-                  {/* <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-  <h2 className="text-xl font-semibold mb-4">Your Booked Emergency Users</h2>
-  {loading ? (
-    <p className="text-gray-500">Loading confirmed bookings...</p>
-  ) : confirmedEmergencies.length === 0 ? (
-    <p className="text-gray-500">No confirmed bookings yet.</p>
-  ) : (
-    <ul className="space-y-4">
-      {confirmedEmergencies.map((user, index) => (
-        <li key={index} className="border rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-colors">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <p><strong className="text-green-700">Email:</strong> <span className="text-gray-800">{user.userEmail}</span></p>
-            <p><strong className="text-green-700">Name:</strong> <span className="text-gray-800">{user.userName}</span></p>
-            <p><strong className="text-green-700">Phone:</strong> <span className="text-gray-800">{user.userPhone}</span></p>
-            <p className="md:col-span-2"><strong className="text-green-700">Address:</strong> <span className="text-gray-800">{user.address}</span></p>
-          </div>
-          <div className="mt-3 flex justify-between items-center">
-            <div className="text-xs text-gray-500">
-              Status: <span className="text-green-600 font-medium">Confirmed</span>
-            </div>
-            <button
-              onClick={() => handleCompleteRequest(user, index)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-            >
-              Mark as Completed
-            </button>
-          </div>
-        </li>
-      ))}
-    </ul>
-  )}
-</div> */}
-
-
-
 
                   {renderTimeSlots()}
                 </>
