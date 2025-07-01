@@ -1,0 +1,59 @@
+.services-slider .slick-slide {
+  padding: 0 15px;
+}
+
+.services-slider .box-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 330px; /* Makes height consistent */
+  margin: 15px 0;
+  background-color: #fff; /* original white card background */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.services-slider .box-card:hover {
+  transform: translateY(-4px);
+}
+
+.services-slider .section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.services-slider .icon i {
+  color: #007bff;
+}
+
+.services-slider p {
+  flex-grow: 1;
+  color: #333;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.services-slider a {
+  color: #007bff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.services-slider a:hover {
+  text-decoration: underline;
+}
+
+.services-slider .slick-dots {
+  bottom: -40px;
+}
+
+.services-slider .slick-prev,
+.services-slider .slick-next {
+  z-index: 1;
+}
