@@ -67,8 +67,8 @@ const AslamDashboard = () => {
   const [confirmedEmergencies, setConfirmedEmergencies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
-
-  const currentWorkshopId = auth.currentUser?.uid;
+const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
+  // const currentWorkshopId = auth.currentUser?.uid;
 
 
   //location map
@@ -189,93 +189,185 @@ const AslamDashboard = () => {
     await fetchConfirmedEmergencies();
   };
 
+
+
+  //
+useEffect(() => {
+  const fetchWorkshopId = async () => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      const docRef = doc(db, "workshops", currentUser.uid); // ya firestore id
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setCurrentWorkshopId(docSnap.id); // or docSnap.data().id
+      }
+    }
+  };
+  fetchWorkshopId();
+}, []);
+
+
+
   // Enhanced useEffect with better error handling and debugging
 
+  // useEffect(() => {
+  //   const fetchConfirmedEmergencies = async () => {
+  //     setLoading(true); // Add loading state
+  //     try {
+  //       console.log("Fetching confirmed emergencies...");
+
+  //       // Get all users from Firestore
+  //       const usersSnapshot = await getDocs(collection(db, "users"));
+  //       const confirmedList = [];
+
+  //       console.log(`Found ${usersSnapshot.size} users in database`);
+
+  //       usersSnapshot.forEach(doc => {
+  //         const userData = doc.data();
+  //         const userId = doc.id;
+
+  //         console.log(`Processing user: ${userId}`, userData);
+
+  //         // Check if user has emergency array
+  //         if (userData.emergency && Array.isArray(userData.emergency)) {
+  //           console.log(`User ${userId} has ${userData.emergency.length} emergency entries`);
+
+  //           userData.emergency.forEach((emergency, emergencyIndex) => {
+  //             console.log(`Processing emergency ${emergencyIndex}:`, emergency);
+
+  //             // Check if emergency has location array
+  //             if (emergency.location && Array.isArray(emergency.location)) {
+  //               emergency.location.forEach((loc, locationIndex) => {
+  //                 console.log(`Processing location ${locationIndex}:`, loc);
+
+  //                 // If status is confirmed, add user details
+  //                 if (loc.status === "confirmed") {
+  //                   console.log(`Found confirmed booking for user: ${userData.email}`);
+
+  //                   confirmedList.push({
+  //                     userId: userId,
+  //                     userEmail: userData.email || "No Email",
+  //                     userName: userData.name || userData.firstName || "No Name",
+  //                     userPhone: userData.phone || userData.phoneNumber || "No Phone",
+  //                     address: loc.address || "No Address",
+  //                     emergencyType: emergency.type || "Emergency",
+  //                     confirmedAt: loc.confirmedAt || new Date().toISOString(),
+  //                     locationIndex: locationIndex,
+  //                     emergencyIndex: emergencyIndex
+  //                   });
+  //                 }
+  //               });
+  //             } else {
+  //               // If emergency has direct status (alternative structure)
+  //               if (emergency.status === "confirmed") {
+  //                 console.log(`Found confirmed emergency (direct status) for user: ${userData.email}`);
+
+  //                 confirmedList.push({
+  //                   userId: userId,
+  //                   userEmail: userData.email || "No Email",
+  //                   userName: userData.name || userData.firstName || "No Name",
+  //                   userPhone: userData.phone || userData.phoneNumber || "No Phone",
+  //                   address: emergency.address || "No Address",
+  //                   emergencyType: emergency.type || "Emergency",
+  //                   confirmedAt: emergency.confirmedAt || new Date().toISOString(),
+  //                   emergencyIndex: emergencyIndex
+  //                 });
+  //               }
+  //             }
+  //           });
+  //         }
+  //       });
+
+  //       console.log(`Total confirmed emergencies found: ${confirmedList.length}`);
+  //       console.log("Confirmed emergencies list:", confirmedList);
+
+  //       // Sort by confirmation date (newest first)
+  //       confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
+
+  //       setConfirmedEmergencies(confirmedList);
+  //     } catch (error) {
+  //       console.error("Error fetching confirmed emergencies:", error);
+  //       setConfirmedEmergencies([]); // Set empty array on error
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchConfirmedEmergencies();
+  // }, []);
+
   useEffect(() => {
-    const fetchConfirmedEmergencies = async () => {
-      setLoading(true); // Add loading state
-      try {
-        console.log("Fetching confirmed emergencies...");
+  const fetchConfirmedEmergencies = async () => {
+    setLoading(true);
+    try {
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const confirmedList = [];
 
-        // Get all users from Firestore
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const confirmedList = [];
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        const userId = doc.id;
 
-        console.log(`Found ${usersSnapshot.size} users in database`);
-
-        usersSnapshot.forEach(doc => {
-          const userData = doc.data();
-          const userId = doc.id;
-
-          console.log(`Processing user: ${userId}`, userData);
-
-          // Check if user has emergency array
-          if (userData.emergency && Array.isArray(userData.emergency)) {
-            console.log(`User ${userId} has ${userData.emergency.length} emergency entries`);
-
-            userData.emergency.forEach((emergency, emergencyIndex) => {
-              console.log(`Processing emergency ${emergencyIndex}:`, emergency);
-
-              // Check if emergency has location array
-              if (emergency.location && Array.isArray(emergency.location)) {
-                emergency.location.forEach((loc, locationIndex) => {
-                  console.log(`Processing location ${locationIndex}:`, loc);
-
-                  // If status is confirmed, add user details
-                  if (loc.status === "confirmed") {
-                    console.log(`Found confirmed booking for user: ${userData.email}`);
-
-                    confirmedList.push({
-                      userId: userId,
-                      userEmail: userData.email || "No Email",
-                      userName: userData.name || userData.firstName || "No Name",
-                      userPhone: userData.phone || userData.phoneNumber || "No Phone",
-                      address: loc.address || "No Address",
-                      emergencyType: emergency.type || "Emergency",
-                      confirmedAt: loc.confirmedAt || new Date().toISOString(),
-                      locationIndex: locationIndex,
-                      emergencyIndex: emergencyIndex
-                    });
-                  }
-                });
-              } else {
-                // If emergency has direct status (alternative structure)
-                if (emergency.status === "confirmed") {
-                  console.log(`Found confirmed emergency (direct status) for user: ${userData.email}`);
-
+        if (userData.emergency && Array.isArray(userData.emergency)) {
+          userData.emergency.forEach((emergency, emergencyIndex) => {
+            // Check nested location array
+            if (emergency.location && Array.isArray(emergency.location)) {
+              emergency.location.forEach((loc, locationIndex) => {
+                if (
+                  loc.status === "confirmed" &&
+                  emergency.bookedWorkshop?.workshopId === currentWorkshopId
+                ) {
                   confirmedList.push({
                     userId: userId,
                     userEmail: userData.email || "No Email",
                     userName: userData.name || userData.firstName || "No Name",
                     userPhone: userData.phone || userData.phoneNumber || "No Phone",
-                    address: emergency.address || "No Address",
+                    address: loc.address || "No Address",
                     emergencyType: emergency.type || "Emergency",
-                    confirmedAt: emergency.confirmedAt || new Date().toISOString(),
+                    confirmedAt: loc.confirmedAt || new Date().toISOString(),
+                    locationIndex: locationIndex,
                     emergencyIndex: emergencyIndex
                   });
                 }
+              });
+            } else {
+              // If no location array and emergency is directly confirmed
+              if (
+                emergency.status === "confirmed" &&
+                emergency.bookedWorkshop?.workshopId === currentWorkshopId
+              ) {
+                confirmedList.push({
+                  userId: userId,
+                  userEmail: userData.email || "No Email",
+                  userName: userData.name || userData.firstName || "No Name",
+                  userPhone: userData.phone || userData.phoneNumber || "No Phone",
+                  address: emergency.address || "No Address",
+                  emergencyType: emergency.type || "Emergency",
+                  confirmedAt: emergency.confirmedAt || new Date().toISOString(),
+                  emergencyIndex: emergencyIndex
+                });
               }
-            });
-          }
-        });
+            }
+          });
+        }
+      });
 
-        console.log(`Total confirmed emergencies found: ${confirmedList.length}`);
-        console.log("Confirmed emergencies list:", confirmedList);
+      confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
+      setConfirmedEmergencies(confirmedList);
+    } catch (error) {
+      console.error("Error fetching confirmed emergencies:", error);
+      setConfirmedEmergencies([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Sort by confirmation date (newest first)
-        confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
-
-        setConfirmedEmergencies(confirmedList);
-      } catch (error) {
-        console.error("Error fetching confirmed emergencies:", error);
-        setConfirmedEmergencies([]); // Set empty array on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  if (currentWorkshopId) {
     fetchConfirmedEmergencies();
-  }, []);
+  }
+}, [currentWorkshopId]);
+
+
 
   useEffect(() => {
     const unsubscribers = [];
