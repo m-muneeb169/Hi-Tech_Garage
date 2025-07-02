@@ -1,4 +1,3 @@
-// Enhanced SuspensionReplacement.tsx with full design and animations
 import { useState, useEffect } from "react";
 import {
   Calendar,
