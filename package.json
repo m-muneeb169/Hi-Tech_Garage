@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@fontsource/barlow": "^5.2.6",
+    "@fontsource/open-sans": "^5.2.6",
     "@radix-ui/react-dialog": "^1.1.4",
     "@swiper/core": "^0.0.21",
     "@testing-library/jest-dom": "^5.17.0",

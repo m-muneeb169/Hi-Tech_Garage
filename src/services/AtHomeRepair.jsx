@@ -4,9 +4,10 @@ import {
   Clock,
   Wrench,
   Shield,
-  Home,
+  Home,Star,
   Phone,
   Settings,
+  CheckCircle,
   ArrowRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -230,7 +231,100 @@ const AtHomeRepair = () => {
           </motion.div>
         </div>
       </motion.div>
-
+{/* Testimonials Section */}
+<section className="py-20 bg-white">
+  <motion.div
+    initial="hidden"
+    whileInView="visible"
+    viewport={{ once: true }}
+    variants={staggerContainer}
+    className="container mx-auto px-4"
+  >
+    <motion.h2
+      variants={fadeUp}
+      className="text-4xl font-bold text-center mb-16 text-blue-900 font-['Barlow']"
+    >
+      What Our Customers Say
+    </motion.h2>
+    <div className="grid md:grid-cols-3 gap-8">
+      {[
+        {
+          name: "Hassan R.",
+          location: "Karachi",
+          text: "The convenience of having my car serviced at home is unmatched. Excellent service!",
+        },
+        {
+          name: "Amina S.",
+          location: "Lahore",
+          text: "Very professional mechanics. They explained everything and completed the work efficiently.",
+        },
+        {
+          name: "Usman M.",
+          location: "Islamabad",
+          text: "Great experience! The mechanic was punctual and very knowledgeable.",
+        },
+      ].map((testimonial, index) => (
+        <motion.div
+          key={index}
+          variants={fadeUp}
+          className="bg-gray-50 p-6 rounded-lg shadow-md"
+        >
+          <div className="flex items-center mb-4">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className="w-4 h-4 text-yellow-400 fill-current"
+              />
+            ))}
+          </div>
+          <p className="text-gray-600 mb-4 italic">"{testimonial.text}"</p>
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3 font-bold text-blue-900">
+              {testimonial.name.charAt(0)}
+            </div>
+            <div>
+              <p className="font-semibold font-['Barlow']">{testimonial.name}</p>
+              <p className="text-sm text-gray-500 italic">
+                {testimonial.location}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  </motion.div>
+</section>
+  <section className="py-20 bg-gray-50">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+          className="container mx-auto px-4"
+        >
+          <motion.h2
+            variants={fadeUp}
+            className="text-4xl font-bold text-center mb-16 text-blue-900 font-['Barlow']"
+          >
+            Service Areas
+          </motion.h2>
+          <motion.div
+            variants={staggerContainer}
+            className="grid md:grid-cols-4 gap-4 max-w-4xl mx-auto"
+          >
+            {["Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan", "Peshawar", "Quetta"].map((city, index) => (
+              <motion.div
+                key={index}
+                variants={fadeUp}
+                className="flex items-center bg-white p-4 rounded-lg shadow-sm"
+              >
+                <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
+                <span>{city}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+      </section>
       <Footer />
     </div>
   );
