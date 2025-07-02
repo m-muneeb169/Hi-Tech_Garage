@@ -1,12 +1,13 @@
-// Enhanced PeriodicServicing.tsx with full design and animations
+// Enhanced BrakeService.tsx with full design and animations
 import { useState, useEffect } from "react";
 import {
   Calendar,
-  Shield,
   Star,
   CheckCircle,
   Phone,
-  Settings,
+  Activity,
+  AlertTriangle,
+  CircleCheck
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Sidenavbar from "../components/sidenavbar";
@@ -31,7 +32,7 @@ const staggerContainer = {
   },
 };
 
-const PeriodicServicing = () => {
+const BrakeService = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -56,10 +57,10 @@ const PeriodicServicing = () => {
             className="max-w-3xl text-center px-6"
           >
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 font-['Barlow'] tracking-tight leading-tight">
-              PERIODIC <span className="text-blue-300">SERVICING</span>
+              BRAKE <span className="text-blue-300">SERVICE</span>
             </h1>
             <p className="text-lg md:text-xl text-white/90 mb-8 italic">
-              Keep your vehicle in peak condition with our comprehensive periodic maintenance service
+              Ensure your safety with expert brake inspections, repairs, and replacements using premium parts
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -67,7 +68,7 @@ const PeriodicServicing = () => {
               transition={{ type: "spring", stiffness: 400 }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-['Barlow'] font-semibold tracking-wide"
             >
-              Schedule Service
+              Book Brake Check
             </motion.button>
           </motion.div>
         </div>
@@ -86,21 +87,21 @@ const PeriodicServicing = () => {
             variants={fadeUp}
             className="text-4xl font-bold text-center mb-16 text-blue-900 font-['Barlow']"
           >
-            Why Choose Periodic Servicing
+            Why Timely Brake Service Matters
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[{
-              icon: <Shield className="w-12 h-12 text-blue-600" />,
-              title: "Preventive Maintenance",
-              description: "Catch potential issues before they become major problems with regular inspections",
+              icon: <Activity className="w-12 h-12 text-blue-600" />,
+              title: "Improved Safety",
+              description: "Keep your vehicle's stopping power optimal with regular brake inspections",
             }, {
-              icon: <Settings className="w-12 h-12 text-blue-600" />,
-              title: "Peak Performance",
-              description: "Maintain optimal vehicle performance with scheduled maintenance and tune-ups",
+              icon: <AlertTriangle className="w-12 h-12 text-blue-600" />,
+              title: "Prevent Major Failures",
+              description: "Avoid costly repairs by catching issues early like worn pads or leaky fluid",
             }, {
-              icon: <Star className="w-12 h-12 text-blue-600" />,
-              title: "Preserve Value",
-              description: "Maintain your vehicle's resale value with documented service history",
+              icon: <CircleCheck className="w-12 h-12 text-blue-600" />,
+              title: "Smooth Driving",
+              description: "Experience better control and peace of mind in daily and emergency situations",
             }].map((benefit, index) => (
               <motion.div
                 key={index}
@@ -323,4 +324,4 @@ const PeriodicServicing = () => {
   );
 };
 
-export default PeriodicServicing;
+export default BrakeService;

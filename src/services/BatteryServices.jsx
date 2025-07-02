@@ -1,12 +1,13 @@
-// Enhanced PeriodicServicing.tsx with full design and animations
-import { useState, useEffect } from "react";
+// Enhanced BatteryService.tsx with full design and animations
+import React, { useState, useEffect } from "react";
 import {
   Calendar,
-  Shield,
   Star,
   CheckCircle,
   Phone,
-  Settings,
+  Battery,
+  Zap,
+  Activity,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Sidenavbar from "../components/sidenavbar";
@@ -31,8 +32,8 @@ const staggerContainer = {
   },
 };
 
-const PeriodicServicing = () => {
-  const [isVisible, setIsVisible] = useState(false);
+const BatteryService = () => {
+  const [, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -56,10 +57,10 @@ const PeriodicServicing = () => {
             className="max-w-3xl text-center px-6"
           >
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 font-['Barlow'] tracking-tight leading-tight">
-              PERIODIC <span className="text-blue-300">SERVICING</span>
+              BATTERY <span className="text-blue-300">SERVICE</span>
             </h1>
             <p className="text-lg md:text-xl text-white/90 mb-8 italic">
-              Keep your vehicle in peak condition with our comprehensive periodic maintenance service
+              Reliable car battery testing, replacement, and jump-starting services—wherever you are
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -67,7 +68,7 @@ const PeriodicServicing = () => {
               transition={{ type: "spring", stiffness: 400 }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-['Barlow'] font-semibold tracking-wide"
             >
-              Schedule Service
+              Book Battery Service
             </motion.button>
           </motion.div>
         </div>
@@ -86,21 +87,21 @@ const PeriodicServicing = () => {
             variants={fadeUp}
             className="text-4xl font-bold text-center mb-16 text-blue-900 font-['Barlow']"
           >
-            Why Choose Periodic Servicing
+            Why Battery Service Matters
           </motion.h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[{
-              icon: <Shield className="w-12 h-12 text-blue-600" />,
-              title: "Preventive Maintenance",
-              description: "Catch potential issues before they become major problems with regular inspections",
+              icon: <Zap className="w-12 h-12 text-blue-600" />,
+              title: "Quick Jump-Start",
+              description: "Instant help when your car won’t start due to a dead battery",
             }, {
-              icon: <Settings className="w-12 h-12 text-blue-600" />,
-              title: "Peak Performance",
-              description: "Maintain optimal vehicle performance with scheduled maintenance and tune-ups",
+              icon: <Battery className="w-12 h-12 text-blue-600" />,
+              title: "Battery Replacement",
+              description: "High-quality battery replacements delivered and installed on-site",
             }, {
-              icon: <Star className="w-12 h-12 text-blue-600" />,
-              title: "Preserve Value",
-              description: "Maintain your vehicle's resale value with documented service history",
+              icon: <Activity className="w-12 h-12 text-blue-600" />,
+              title: "Battery Health Check",
+              description: "Diagnostic testing to ensure your battery is reliable and long-lasting",
             }].map((benefit, index) => (
               <motion.div
                 key={index}
@@ -323,4 +324,4 @@ const PeriodicServicing = () => {
   );
 };
 
-export default PeriodicServicing;
+export default BatteryService;

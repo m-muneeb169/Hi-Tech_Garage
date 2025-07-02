@@ -35,6 +35,12 @@ import CartWorkshopRepair from './components/CartWorkshopRepair.jsx';
 import AddressWorkshopRepair from "./components/AddressWorkshopRepair.jsx";
 import ViewLocation from './components/ViewLocation'; // path adjust karo
 import UserSettings from './components/UserSettings'; // Adjust path if needed
+import BatteryService from "./services/BatteryServices.jsx";
+import BrakeService from "./services/BrakeService.jsx";
+import CoolantChange from "./services/CoolantChange.jsx";
+import SuspensionReplacement from "./services/SuspensionReplacement.jsx";
+import TireService from "./services/TireServices.jsx";
+import Tuning from "./services/Tuning.jsx";
 
 function App() {
   const theme = {
@@ -72,6 +78,12 @@ function App() {
             <Route path="/AtHomeRepair" element={<AtHomeRepair />} />
             <Route path="/PeriodicServicing" element={<PeriodicServicing />} />
             <Route path="/oilChange" element={<OilChange />} />
+            <Route path="/battery-service" element={<BatteryService />} />
+            <Route path="/brake-service" element={<BrakeService />} />
+            <Route path="/coolant-change" element={<CoolantChange />} />\
+            <Route path="/suspension-replacement" element={<SuspensionReplacement />} />
+            <Route path="/tire-services" element={<TireService />} />
+            <Route path="/Tuning" element={<Tuning />} />
             <Route path="/honda" element={<Honda />} />
             <Route path="/aslamAutos" element={<AslamAutos />} />
             <Route path="/firstStop" element={<FirstStop />} />

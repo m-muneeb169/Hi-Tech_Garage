@@ -1,13 +1,9 @@
 // Enhanced OilChange.tsx with animations and font styling
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  ChevronRight,
   Clock,
-  MapPin,
   Shield,
-  Truck,
   Phone,
-  Star,
   CheckCircle,
   Wrench
 } from 'lucide-react';
