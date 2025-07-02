@@ -41,6 +41,7 @@ import CoolantChange from "./services/CoolantChange.jsx";
 import SuspensionReplacement from "./services/SuspensionReplacement.jsx";
 import TireService from "./services/TireServices.jsx";
 import Tuning from "./services/Tuning.jsx";
+import WorkshopProfile from './components/WorkshopProfile';
 
 function App() {
   const theme = {
@@ -62,18 +63,18 @@ function App() {
             <Route path="/about-us" element={<About />} />
             <Route path="/team" element={<Team />} />
             <Route path="/contact" element={<Contact />} />
-            
+
             {/* Consolidated booking routes */}
             <Route path="/booking" element={<Booking />} />
             <Route path="/onsite" element={<OnSite />} />
             <Route path="/workshopRepair" element={<WorkshopRepair />} />
-            
+
             {/* Remove duplicate routes */}
             {/* <Route path="/bookings" element={<Booking />} /> */}
             {/* <Route path="/bookings/onSite" element={<OnSite />} /> */}
             {/* <Route path="/bookings/workshopRepair" element={<WorkshopRepair />} /> */}
             {/* <Route path="/onSite" element={<OnSite />} /> */}
-            
+
             <Route path="/RoadsideAssistance" element={<RoadsideAssistance />} />
             <Route path="/AtHomeRepair" element={<AtHomeRepair />} />
             <Route path="/PeriodicServicing" element={<PeriodicServicing />} />
@@ -95,13 +96,13 @@ function App() {
             <Route path="/toyota" element={<Toyota />} />
             <Route path="/aslam-dashboard" element={<AslamDashboard />} />
 
-            <Route path="/pages/home" element={<Home />} />
-            
+            {/* <Route path="/pages/home" element={<Home />} /> */}
+
             {/* Login routes */}
             <Route path="/login/loginUser" element={<LoginUser />} />
             <Route path="/login/workshop" element={<LoginWorkshop />} />
             <Route path="/login/user" element={<LoginUser />} />
-            
+
             <Route path="/emergency" element={<Emergency />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/cart" element={<Cart />} />
@@ -109,10 +110,12 @@ function App() {
             <Route path="/view-detail" element={<ViewDetail />} />
             <Route path="/cart-workshop-repair" element={<CartWorkshopRepair />} />
             <Route path="/address-workshop-repair" element={<AddressWorkshopRepair />} />
-            <Route path="/dashboard/aslam" element={<AslamDashboard />} />
-            <Route path="/" element={<AslamDashboard />} />
-<Route path="/view-location/:userId" element={<ViewLocation />} />
-<Route path="/settings" element={<UserSettings />} />
+            {/* <Route path="/dashboard/aslam" element={<AslamDashboard />} /> */}
+            {/* <Route path="/" element={<AslamDashboard />} /> */}
+            <Route path="/view-location/:userId" element={<ViewLocation />} />
+            <Route path="/settings" element={<UserSettings />} />
+            <Route path="/workshop-profile" element={<WorkshopProfile />} />
+            <Route path="/aslam-dashboard" element={<AslamDashboard />} />
           </Routes>
           <GoToTop />
         </div>
