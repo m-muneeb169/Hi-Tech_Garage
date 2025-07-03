@@ -11,6 +11,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import Sidenavbar from '../components/sidenavbar';
 import Header from '../components/header';
 import Footer from '../components/footer';
@@ -35,6 +36,8 @@ const staggerContainer = {
 };
 
 const AtHomeRepair = () => {
+  const navigate = useNavigate();
+  const goToLogin = () => navigate("/user-login"); // Adjust route if different
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-800 overflow-x-hidden">
       <Sidenavbar />
@@ -66,6 +69,7 @@ const AtHomeRepair = () => {
             </motion.p>
             <motion.div variants={fadeUp}>
               <motion.button
+                onClick={goToLogin}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400 }}
@@ -167,6 +171,7 @@ const AtHomeRepair = () => {
                 </div>
                 <p className="text-gray-600 mb-4 font-['Open_Sans']">{service.description}</p>
                 <motion.button 
+                  onClick={goToLogin}
                   whileHover={{ x: 3 }}
                   className="text-blue-600 hover:text-blue-800 flex items-center font-medium transition-colors duration-300 font-['Barlow']"
                 >
@@ -212,6 +217,7 @@ const AtHomeRepair = () => {
             transition={{ delay: 0.6 }}
           >
             <motion.button
+              onClick={goToLogin}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               className="bg-white text-blue-900 px-8 py-4 rounded-lg hover:bg-gray-100 transition-all duration-300 flex items-center font-['Barlow'] font-semibold tracking-wide uppercase text-sm"
@@ -221,6 +227,7 @@ const AtHomeRepair = () => {
             </motion.button>
             
             <motion.button
+              onClick={goToLogin}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               className="bg-transparent text-white border-2 border-blue-400 px-8 py-4 rounded-lg hover:bg-blue-900/30 transition-all duration-300 flex items-center font-['Barlow'] font-medium tracking-wide"

@@ -258,6 +258,8 @@
 
 // export default LoginUser;
 import React, { useState } from "react";
+
+import { motion } from "framer-motion";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -389,109 +391,135 @@ const LoginUser = () => {
       showMessage("Google Sign-in failed: " + error.message, "error");
     }
   };
+return (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300 px-4 py-10 overflow-y-auto">
+    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-5xl flex flex-col md:flex-row transition-all duration-700">
+      
+      {/* Left Panel */}
+      <div className="md:w-1/2 w-full bg-blue-600 text-white flex flex-col items-center justify-center p-10 space-y-6">
+        <img src="/images/user.png" alt="User Icon" className="w-40 rounded-lg" />
+        <h1 className="text-2xl font-bold text-center">Book vehicle services in just a few clicks.</h1>
+        <p className="text-sm text-center">Login or sign up to continue</p>
+      </div>
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300 px-4 py-10 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-5xl flex flex-col md:flex-row transition-all duration-700">
-        {/* Left Panel */}
-        <div className="md:w-1/2 w-full bg-blue-600 text-white flex flex-col items-center justify-center p-10 space-y-6">
-          <img src="/images/user.png" alt="User Icon" className="w-40 rounded-lg" />
-          <h1 className="text-2xl font-bold text-center">Book vehicle services in just a few clicks.</h1>
-          <p className="text-sm text-center">Login or sign up to continue</p>
-        </div>
+      {/* Right Panel (Form) with animation */}
+      <motion.div
+        key={isLogin ? "login" : "signup"}
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -50 }}
+        transition={{ duration: 0.5 }}
+        className="md:w-1/2 w-full flex flex-col p-6 relative"
+      >
+        <h2 className="text-2xl font-bold text-center text-blue-700 mb-4 sticky top-0 bg-white z-10 py-2">
+          {isLogin ? "Login to Your Account" : "Create User Account"}
+        </h2>
 
-        {/* Right Panel (Form) */}
-        <div className="md:w-1/2 w-full flex flex-col p-6 relative">
-          <h2 className="text-2xl font-bold text-center text-blue-700 mb-4 sticky top-0 bg-white z-10 py-2">
-            {isLogin ? "Login to Your Account" : "Create User Account"}
-          </h2>
+        {message.text && (
+          <div
+            className={`mb-4 p-2 text-sm text-white rounded text-center ${
+              message.type === "error" ? "bg-red-600" : "bg-green-600"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
 
-          {message.text && (
-            <div className={`mb-4 p-2 text-sm text-white rounded text-center ${message.type === "error" ? "bg-red-600" : "bg-green-600"}`}>
-              {message.text}
+        <form onSubmit={handleSubmit} className="overflow-y-auto space-y-4 max-h-[70vh] pr-2">
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input name="fullName" value={formData.fullName} onChange={handleChange} className="input" placeholder="Full Name" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact No</label>
+                <input name="contactNo" value={formData.contactNo} maxLength="11" onChange={handleChange} className="input" placeholder="11-digit Contact No" />
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input name="email" type="email" value={formData.email} onChange={handleChange} className="input" placeholder="Email" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="input pr-10"
+                placeholder="Password"
+              />
+              <span className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-600" onClick={() => setShowPassword(!showPassword)}>
+                <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+              </span>
+            </div>
+          </div>
+
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <input name="address" value={formData.address} onChange={handleChange} className="input" placeholder="Address" />
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="overflow-y-auto space-y-4 max-h-[70vh] pr-2">
-            {!isLogin && (
+          {/* 🔘 Enhanced Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg font-semibold"
+          >
+            {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
+          </button>
+
+          <p className="text-sm text-center text-gray-600 mt-2">
+            {isLogin ? (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input name="fullName" value={formData.fullName} onChange={handleChange} className="input" placeholder="Full Name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact No</label>
-                  <input name="contactNo" value={formData.contactNo} maxLength="11" onChange={handleChange} className="input" placeholder="11-digit Contact No" />
-                </div>
+                Don’t have an account?{" "}
+                <span
+                  className="text-blue-700 cursor-pointer hover:underline"
+                  onClick={() => {
+                    setIsLogin(false);
+                    resetForm();
+                  }}
+                >
+                  Sign Up
+                </span>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <span
+                  className="text-blue-700 cursor-pointer hover:underline"
+                  onClick={() => {
+                    setIsLogin(true);
+                    resetForm();
+                  }}
+                >
+                  Login
+                </span>
               </>
             )}
+          </p>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input name="email" type="email" value={formData.email} onChange={handleChange} className="input" placeholder="Email" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="input pr-10"
-                  placeholder="Password"
-                />
-                <span
-                  className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-600"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
-                </span>
+          {isLogin && (
+            <div className="text-center mt-4">
+              <p className="text-sm mb-2">Or login with</p>
+              <div className="flex justify-center gap-4 text-xl">
+                <i className="fab fa-google text-red-600 cursor-pointer hover:scale-110 transition-transform duration-300" onClick={handleGoogleSignIn} />
               </div>
             </div>
-
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <input name="address" value={formData.address} onChange={handleChange} className="input" placeholder="Address" />
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
-            </button>
-
-            <p className="text-sm text-center text-gray-600 mt-2">
-              {isLogin ? (
-                <>
-                  Don’t have an account?{" "}
-                  <span className="text-blue-700 cursor-pointer hover:underline" onClick={() => { setIsLogin(false); resetForm(); }}>
-                    Sign Up
-                  </span>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <span className="text-blue-700 cursor-pointer hover:underline" onClick={() => { setIsLogin(true); resetForm(); }}>
-                    Login
-                  </span>
-                </>
-              )}
-            </p>
-
-            {isLogin && (
-              <div className="text-center mt-4">
-                <p className="text-sm mb-2">Or login with</p>
-                <div className="flex justify-center gap-4 text-xl">
-                  <i className="fab fa-google text-red-600 cursor-pointer hover:scale-110 transition" onClick={handleGoogleSignIn} />
-                </div>
-              </div>
-            )}
-          </form>
-        </div>
-      </div>
+          )}
+        </form>
+      </motion.div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default LoginUser;
