@@ -37,7 +37,7 @@ const staggerContainer = {
 
 const AtHomeRepair = () => {
   const navigate = useNavigate();
-  const goToLogin = () => navigate("/user-login"); // Adjust route if different
+  const goToLogin = () => navigate("/login/user"); // Adjust route if different
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-800 overflow-x-hidden">
       <Sidenavbar />
