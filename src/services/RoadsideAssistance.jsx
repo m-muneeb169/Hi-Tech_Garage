@@ -17,6 +17,7 @@ import Footer from '../components/footer';
 import { Link } from 'react-router-dom';
 import '@fontsource/barlow/700.css';
 import '@fontsource/open-sans/400-italic.css';
+import { useNavigate } from 'react-router-dom';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -34,6 +35,8 @@ const staggerContainer = {
 };
 
 const RoadsideAssistance = () => {
+   const navigate = useNavigate();
+  const goToLogin = () => navigate("/login/user"); // Adjust route if different
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -74,6 +77,7 @@ const RoadsideAssistance = () => {
               Your reliable partner when the unexpected happens. Professional assistance anywhere, anytime.
             </p>
             <motion.button
+                          onClick={goToLogin}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.98 }}
                           transition={{ type: 'spring', stiffness: 400 }}
@@ -235,7 +239,9 @@ const RoadsideAssistance = () => {
           <motion.p variants={fadeUp} className="text-xl mb-8 max-w-2xl mx-auto italic">
             Our professional team is available 24/7 to help you get back on the road
           </motion.p>
-          <motion.div variants={fadeUp} className="flex flex-col md:flex-row justify-center items-center gap-4">
+          <motion.div 
+          onClick={goToLogin}
+          variants={fadeUp} className="flex flex-col md:flex-row justify-center items-center gap-4">
             <AnimatedButton className="bg-white text-blue-900 px-8 py-3 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center">
               <Phone className="w-5 h-5 mr-2" />
               Call Now

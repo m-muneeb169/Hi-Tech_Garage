@@ -16,6 +16,7 @@ import Footer from "../components/footer";
 import { Link } from "react-router-dom";
 import "@fontsource/barlow/700.css";
 import "@fontsource/open-sans/400-italic.css";
+import { useNavigate } from 'react-router-dom';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -33,12 +34,13 @@ const staggerContainer = {
 };
 
 const BatteryService = () => {
+   const navigate = useNavigate();
+    const goToLogin = () => navigate("/login/user"); // Adjust route if different
   const [, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-800 overflow-x-hidden font-['Open_Sans']">
       <Sidenavbar />
@@ -63,6 +65,7 @@ const BatteryService = () => {
               Reliable car battery testing, replacement, and jump-starting services—wherever you are
             </p>
             <motion.button
+              onClick={goToLogin}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400 }}
@@ -264,6 +267,7 @@ const BatteryService = () => {
       className="flex flex-col md:flex-row justify-center items-center gap-4"
     >
       <motion.button
+        onClick={goToLogin}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400 }}
@@ -273,6 +277,7 @@ const BatteryService = () => {
         Schedule Now
       </motion.button>
       <motion.button
+        onClick={goToLogin}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400 }}

@@ -15,6 +15,7 @@ import Footer from "../components/footer";
 import { Link } from "react-router-dom";
 import "@fontsource/barlow/700.css";
 import "@fontsource/open-sans/400-italic.css";
+import { useNavigate } from 'react-router-dom';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -32,6 +33,9 @@ const staggerContainer = {
 };
 
 const Tuning = () => {
+    
+  const navigate = useNavigate();
+  const goToLogin = () => navigate("/login/user"); // Adjust route if different
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -62,6 +66,7 @@ const Tuning = () => {
               Experience enhanced engine performance, smoother rides, and increased fuel efficiency with our expert vehicle tuning
             </p>
             <motion.button
+              onClick={goToLogin}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400 }}
@@ -262,6 +267,7 @@ const Tuning = () => {
       className="flex flex-col md:flex-row justify-center items-center gap-4"
     >
       <motion.button
+        onClick={goToLogin}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400 }}
@@ -271,6 +277,7 @@ const Tuning = () => {
         Schedule Now
       </motion.button>
       <motion.button
+        onClick={goToLogin}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400 }}

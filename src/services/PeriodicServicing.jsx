@@ -15,6 +15,7 @@ import Footer from "../components/footer";
 import { Link } from "react-router-dom";
 import "@fontsource/barlow/700.css";
 import "@fontsource/open-sans/400-italic.css";
+import { useNavigate } from 'react-router-dom';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -32,6 +33,8 @@ const staggerContainer = {
 };
 
 const PeriodicServicing = () => {
+  const navigate = useNavigate();
+  const goToLogin = () => navigate("/login/user"); // Adjust route if different
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -62,6 +65,7 @@ const PeriodicServicing = () => {
               Keep your vehicle in peak condition with our comprehensive periodic maintenance service
             </p>
             <motion.button
+              onClick={goToLogin}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400 }}
@@ -263,6 +267,7 @@ const PeriodicServicing = () => {
       className="flex flex-col md:flex-row justify-center items-center gap-4"
     >
       <motion.button
+        onClick={goToLogin}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400 }}
@@ -272,6 +277,7 @@ const PeriodicServicing = () => {
         Schedule Now
       </motion.button>
       <motion.button
+        onClick={goToLogin}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400 }}
