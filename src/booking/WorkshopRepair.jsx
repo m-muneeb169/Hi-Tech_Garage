@@ -26,7 +26,7 @@ function WorkshopRepair() {
         const querySnapshot = await getDocs(collection(db, "workshops"));
         const workshopsData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          name: doc.data().fullName,
+          name: doc.data().workshopName,
         }));
         setWorkshops(workshopsData);
       } catch (error) {
@@ -270,7 +270,7 @@ useEffect(() => {
         <img className="absolute inset-0 w-full h-full object-cover" src="./assets/images/Workrepair.jpg" alt="Booking Background" />
         <div className="absolute inset-0 bg-black/30"></div>
         <div className="container mx-auto px-4 relative z-10">
-          <p className="text-white text-4xl font-bold">On-Site Maintenance</p>
+          <p className="text-white text-4xl font-bold">At Workshop Maintenance</p>
         </div>
       </div>
 
@@ -278,10 +278,10 @@ useEffect(() => {
         <div className="container mx-auto px-4 py-12">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-white mb-4">
-              Maintenance at Home
+              Maintenance at Workshop
             </h1>
             <p className="text-gray-300 max-w-2xl mx-auto">
-              Professional, convenient vehicle maintenance services delivered right to your doorstep.
+              Drive in for dependable auto care — professionally handled at your chosen workshop.
             </p>
           </div>
 
@@ -292,7 +292,29 @@ useEffect(() => {
                 <h2 className="text-2xl font-bold mb-4">Select Workshop</h2>
                 <div className="relative mb-8">
                   <div className="flex items-center">
+
                     <select
+                      value={selectedWorkshop}
+                      onChange={(e) => {
+                        setSelectedWorkshop(e.target.value);
+                        setSelectedServices([]);
+                      }}
+                      className="w-full p-3 pl-4 bg-gray-800 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none appearance-none"
+                    >
+                      {!selectedWorkshop && (
+                        <option value="" disabled hidden>
+                          Select Workshop
+                        </option>
+                      )}
+                      {workshops.map((workshop) => (
+                        <option key={workshop.id} value={workshop.id}>
+                          {workshop.name}
+                        </option>
+                      ))}
+                    </select>
+
+
+                    {/* <select
                       value={selectedWorkshop}
                       // onChange={(e) => setSelectedWorkshop(e.target.value)}
                       onChange={(e) => {
@@ -307,7 +329,7 @@ useEffect(() => {
                           {workshop.name}
                         </option>
                       ))}
-                    </select>
+                    </select> */}
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-blue-500">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -353,7 +375,7 @@ useEffect(() => {
             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
         }`}
       >
-        {slot.day}, {slot.date} - {slot.time}
+        {slot.day} {slot.date} - {slot.time}
       </button>
     ))}
   </div>
@@ -362,7 +384,7 @@ useEffect(() => {
   <div className="mt-8 pt-6 border-t border-gray-700">
     <div className="flex justify-between items-center">
       <div className="text-xl font-bold">
-        Total: ${calculateTotalPrice()}
+        Total: Rs. {calculateTotalPrice()}
       </div>
       <button
         onClick={addToCart}
