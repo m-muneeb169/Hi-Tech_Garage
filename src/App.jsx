@@ -97,7 +97,7 @@ function App() {
             <Route path="/toyota" element={<Toyota />} />
             <Route path="/aslam-dashboard" element={<AslamDashboard />} />
 
-            {/* <Route path="/pages/home" element={<Home />} /> */}
+            <Route path="/pages/home" element={<Home />} />
 
             {/* Login routes */}
             <Route path="/login/loginUser" element={<LoginUser />} />
@@ -111,8 +111,8 @@ function App() {
             <Route path="/view-detail" element={<ViewDetail />} />
             <Route path="/cart-workshop-repair" element={<CartWorkshopRepair />} />
             <Route path="/address-workshop-repair" element={<AddressWorkshopRepair />} />
-            {/* <Route path="/dashboard/aslam" element={<AslamDashboard />} /> */}
-            {/* <Route path="/" element={<AslamDashboard />} /> */}
+            <Route path="/dashboard/aslam" element={<AslamDashboard />} />
+            <Route path="/" element={<AslamDashboard />} /> 
             <Route path="/view-location/:userId" element={<ViewLocation />} />
             <Route path="/settings" element={<UserSettings />} />
             <Route path="/workshop-profile" element={<WorkshopProfile />} />

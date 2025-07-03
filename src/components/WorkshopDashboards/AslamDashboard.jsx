@@ -750,22 +750,22 @@ useEffect(() => {
 
 
 
-  // Logout button
-  const handleLogout = () => {
-    const auth = getAuth();
-    signOut(auth)
-      .then(() => {
-        // Clear local state / cache if any
-        localStorage.clear(); // ya sirf token ya user id ko clear karen
-        sessionStorage.clear();
+  // // Logout button
+  // const handleLogout = () => {
+  //   const auth = getAuth();
+  //   signOut(auth)
+  //     .then(() => {
+  //       // Clear local state / cache if any
+  //       localStorage.clear(); // ya sirf token ya user id ko clear karen
+  //       sessionStorage.clear();
 
-        // Navigate to login
-        navigate("/pages/home");
-      })
-      .catch((error) => {
-        console.error("Logout Error:", error);
-      });
-  };
+  //       // Navigate to login
+  //       navigate("/pages/home");
+  //     })
+  //     .catch((error) => {
+  //       console.error("Logout Error:", error);
+  //     });
+  // };
 
 
   const handleSaveService = async () => {
@@ -1984,10 +1984,7 @@ useEffect(() => {
                   </div>
                 )}
               </div>
-              {/* <div className="flex items-center space-x-2">
-                <img src="./assets/images/team/bilal.jpg" alt="Admin" className="w-8 h-8 rounded-full" />
-                <span className="text-sm font-medium">Admin</span>
-              </div> */}
+              {/* Workshop Profile */}
               <div
                 className="flex items-center space-x-2 cursor-pointer"
                 onClick={() => navigate('/workshop-profile', { state: { fromDashboard: true } })}
@@ -2033,11 +2030,11 @@ useEffect(() => {
                   </button>
                 ))}
               </div>
-              <div className='bg-red-600 rounded-md m-10'>
+              {/* <div className='bg-red-600 rounded-md m-10'>
                 <button className="text-black py-2 font-bold" onClick={handleLogout}>
                   Log Out
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
 
