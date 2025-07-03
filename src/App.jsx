@@ -41,6 +41,7 @@ import CoolantChange from "./services/CoolantChange.jsx";
 import SuspensionReplacement from "./services/SuspensionReplacement.jsx";
 import TireService from "./services/TireServices.jsx";
 import Tuning from "./services/Tuning.jsx";
+import Chatbot from "./components/Chatbot";
 import WorkshopProfile from './components/WorkshopProfile';
 
 function App() {
@@ -118,6 +119,7 @@ function App() {
             <Route path="/aslam-dashboard" element={<AslamDashboard />} />
           </Routes>
           <GoToTop />
+          <Chatbot/>
         </div>
       </ThemeProvider>
     </Router>
