@@ -426,7 +426,7 @@ const LoginWorkshop = () => {
           transition={{ duration: 0.5 }}
           className="md:w-1/2 w-full bg-blue-600 text-white flex flex-col items-center justify-center p-10 space-y-6"
         >
-          <img src="/images/mechanic.png" alt="Mechanic" className="w-48 rounded-lg" />
+          <img src="/assets/images/mechanic.png" alt="Mechanic" className="w-48 rounded-lg" />
           <h1 className="text-2xl font-bold text-center">
             Offer your services online — bookings to emergency help.
           </h1>
