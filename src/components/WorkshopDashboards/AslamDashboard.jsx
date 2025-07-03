@@ -47,6 +47,7 @@ const AslamDashboard = () => {
   const [totalEarnings, setTotalEarnings] = useState(0);
   const auth = getAuth();
   const workshopId = auth.currentUser?.uid;
+  const [fullName, setFullName] = useState('Loading...');
 
   // Consts for days of week
   // const [selectedDay, setSelectedDay] = useState('');
@@ -67,7 +68,7 @@ const AslamDashboard = () => {
   const [confirmedEmergencies, setConfirmedEmergencies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
-const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
+  const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
   // const currentWorkshopId = auth.currentUser?.uid;
 
 
@@ -130,6 +131,25 @@ const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
       },
     ]
   };
+//fetch workshop's admin's name
+useEffect(() => {
+  const fetchWorkshopName = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      const docRef = doc(db, 'workshops', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setFullName(docSnap.data().fullName || 'Workshop');
+      } else {
+        setFullName('Workshop');
+      }
+    }
+  };
+
+  fetchWorkshopName();
+}, []);
 
   // refresh karne p data naa ghaib ho completed requests ka 
   const refreshConfirmedEmergencies = async () => {
@@ -147,6 +167,7 @@ const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
             userData.emergency.forEach((emergency, emergencyIndex) => {
               if (emergency.location && Array.isArray(emergency.location)) {
                 emergency.location.forEach((loc, locationIndex) => {
+                  // ✅ Only push if status is "confirmed" (ignore "completed")
                   if (loc.status === "confirmed") {
                     confirmedList.push({
                       userId: userId,
@@ -161,22 +182,26 @@ const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
                     });
                   }
                 });
-              } else if (emergency.status === "confirmed") {
-                confirmedList.push({
-                  userId: userId,
-                  userEmail: userData.email || "No Email",
-                  userName: userData.name || userData.firstName || "No Name",
-                  userPhone: userData.phone || userData.phoneNumber || "No Phone",
-                  address: emergency.address || "No Address",
-                  emergencyType: emergency.type || "Emergency",
-                  confirmedAt: emergency.confirmedAt || new Date().toISOString(),
-                  emergencyIndex: emergencyIndex
-                });
+              } else {
+                // ✅ Only push if status is "confirmed" (ignore "completed")
+                if (emergency.status === "confirmed") {
+                  confirmedList.push({
+                    userId: userId,
+                    userEmail: userData.email || "No Email",
+                    userName: userData.name || userData.firstName || "No Name",
+                    userPhone: userData.phone || userData.phoneNumber || "No Phone",
+                    address: emergency.address || "No Address",
+                    emergencyType: emergency.type || "Emergency",
+                    confirmedAt: emergency.confirmedAt || new Date().toISOString(),
+                    emergencyIndex: emergencyIndex
+                  });
+                }
               }
             });
           }
         });
 
+        // ✅ Sort by latest confirmed time
         confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
         setConfirmedEmergencies(confirmedList);
       } catch (error) {
@@ -189,23 +214,80 @@ const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
     await fetchConfirmedEmergencies();
   };
 
+  // const refreshConfirmedEmergencies = async () => {
+  //   const fetchConfirmedEmergencies = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const usersSnapshot = await getDocs(collection(db, "users"));
+  //       const confirmedList = [];
+
+  //       usersSnapshot.forEach(doc => {
+  //         const userData = doc.data();
+  //         const userId = doc.id;
+
+  //         if (userData.emergency && Array.isArray(userData.emergency)) {
+  //           userData.emergency.forEach((emergency, emergencyIndex) => {
+  //             if (emergency.location && Array.isArray(emergency.location)) {
+  //               emergency.location.forEach((loc, locationIndex) => {
+  //                 if (loc.status === "confirmed") {
+  //                   confirmedList.push({
+  //                     userId: userId,
+  //                     userEmail: userData.email || "No Email",
+  //                     userName: userData.name || userData.firstName || "No Name",
+  //                     userPhone: userData.phone || userData.phoneNumber || "No Phone",
+  //                     address: loc.address || "No Address",
+  //                     emergencyType: emergency.type || "Emergency",
+  //                     confirmedAt: loc.confirmedAt || new Date().toISOString(),
+  //                     locationIndex: locationIndex,
+  //                     emergencyIndex: emergencyIndex
+  //                   });
+  //                 }
+  //               });
+  //             } else if (emergency.status === "confirmed") {
+  //               confirmedList.push({
+  //                 userId: userId,
+  //                 userEmail: userData.email || "No Email",
+  //                 userName: userData.name || userData.firstName || "No Name",
+  //                 userPhone: userData.phone || userData.phoneNumber || "No Phone",
+  //                 address: emergency.address || "No Address",
+  //                 emergencyType: emergency.type || "Emergency",
+  //                 confirmedAt: emergency.confirmedAt || new Date().toISOString(),
+  //                 emergencyIndex: emergencyIndex
+  //               });
+  //             }
+  //           });
+  //         }
+  //       });
+
+  //       confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
+  //       setConfirmedEmergencies(confirmedList);
+  //     } catch (error) {
+  //       console.error("Error refreshing confirmed emergencies:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   await fetchConfirmedEmergencies();
+  // };
+
 
 
   //
-useEffect(() => {
-  const fetchWorkshopId = async () => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      const docRef = doc(db, "workshops", currentUser.uid); // ya firestore id
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setCurrentWorkshopId(docSnap.id); // or docSnap.data().id
+  useEffect(() => {
+    const fetchWorkshopId = async () => {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const docRef = doc(db, "workshops", currentUser.uid); // ya firestore id
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setCurrentWorkshopId(docSnap.id); // or docSnap.data().id
+        }
       }
-    }
-  };
-  fetchWorkshopId();
-}, []);
+    };
+    fetchWorkshopId();
+  }, []);
 
 
 
@@ -298,23 +380,42 @@ useEffect(() => {
   // }, []);
 
   useEffect(() => {
-  const fetchConfirmedEmergencies = async () => {
-    setLoading(true);
-    try {
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const confirmedList = [];
+    const fetchConfirmedEmergencies = async () => {
+      setLoading(true);
+      try {
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const confirmedList = [];
 
-      usersSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        const userId = doc.id;
+        usersSnapshot.forEach((doc) => {
+          const userData = doc.data();
+          const userId = doc.id;
 
-        if (userData.emergency && Array.isArray(userData.emergency)) {
-          userData.emergency.forEach((emergency, emergencyIndex) => {
-            // Check nested location array
-            if (emergency.location && Array.isArray(emergency.location)) {
-              emergency.location.forEach((loc, locationIndex) => {
+          if (userData.emergency && Array.isArray(userData.emergency)) {
+            userData.emergency.forEach((emergency, emergencyIndex) => {
+              // Check nested location array
+              if (emergency.location && Array.isArray(emergency.location)) {
+                emergency.location.forEach((loc, locationIndex) => {
+                  if (
+                    loc.status === "confirmed" &&
+                    emergency.bookedWorkshop?.workshopId === currentWorkshopId
+                  ) {
+                    confirmedList.push({
+                      userId: userId,
+                      userEmail: userData.email || "No Email",
+                      userName: userData.name || userData.firstName || "No Name",
+                      userPhone: userData.phone || userData.phoneNumber || "No Phone",
+                      address: loc.address || "No Address",
+                      emergencyType: emergency.type || "Emergency",
+                      confirmedAt: loc.confirmedAt || new Date().toISOString(),
+                      locationIndex: locationIndex,
+                      emergencyIndex: emergencyIndex
+                    });
+                  }
+                });
+              } else {
+                // If no location array and emergency is directly confirmed
                 if (
-                  loc.status === "confirmed" &&
+                  emergency.status === "confirmed" &&
                   emergency.bookedWorkshop?.workshopId === currentWorkshopId
                 ) {
                   confirmedList.push({
@@ -322,50 +423,31 @@ useEffect(() => {
                     userEmail: userData.email || "No Email",
                     userName: userData.name || userData.firstName || "No Name",
                     userPhone: userData.phone || userData.phoneNumber || "No Phone",
-                    address: loc.address || "No Address",
+                    address: emergency.address || "No Address",
                     emergencyType: emergency.type || "Emergency",
-                    confirmedAt: loc.confirmedAt || new Date().toISOString(),
-                    locationIndex: locationIndex,
+                    confirmedAt: emergency.confirmedAt || new Date().toISOString(),
                     emergencyIndex: emergencyIndex
                   });
                 }
-              });
-            } else {
-              // If no location array and emergency is directly confirmed
-              if (
-                emergency.status === "confirmed" &&
-                emergency.bookedWorkshop?.workshopId === currentWorkshopId
-              ) {
-                confirmedList.push({
-                  userId: userId,
-                  userEmail: userData.email || "No Email",
-                  userName: userData.name || userData.firstName || "No Name",
-                  userPhone: userData.phone || userData.phoneNumber || "No Phone",
-                  address: emergency.address || "No Address",
-                  emergencyType: emergency.type || "Emergency",
-                  confirmedAt: emergency.confirmedAt || new Date().toISOString(),
-                  emergencyIndex: emergencyIndex
-                });
               }
-            }
-          });
-        }
-      });
+            });
+          }
+        });
 
-      confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
-      setConfirmedEmergencies(confirmedList);
-    } catch (error) {
-      console.error("Error fetching confirmed emergencies:", error);
-      setConfirmedEmergencies([]);
-    } finally {
-      setLoading(false);
+        confirmedList.sort((a, b) => new Date(b.confirmedAt) - new Date(a.confirmedAt));
+        setConfirmedEmergencies(confirmedList);
+      } catch (error) {
+        console.error("Error fetching confirmed emergencies:", error);
+        setConfirmedEmergencies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentWorkshopId) {
+      fetchConfirmedEmergencies();
     }
-  };
-
-  if (currentWorkshopId) {
-    fetchConfirmedEmergencies();
-  }
-}, [currentWorkshopId]);
+  }, [currentWorkshopId]);
 
 
 
@@ -594,7 +676,6 @@ useEffect(() => {
   }, []);
 
 
-
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -607,15 +688,25 @@ useEffect(() => {
           const emergencies = userData.emergency || [];
 
           emergencies.forEach((booking) => {
-            if (booking.status === 'pending') {
+            // ✅ Show requests that are 'pending' OR 'accepted' (but not 'confirmed' or 'completed')
+            if (booking.status === 'pending' || booking.status === 'accepted') {
               allBookings.push({
+                id: doc.id, // Add user document ID
+                userId: doc.id,
                 userName,
                 problem: booking.problem,
                 address: booking.address,
+                emergencyId: booking.emergencyId,
+                status: booking.status, // Include status to show in UI
+                timestamp: booking.timestamp,
+                acceptedWorkshops: booking.acceptedWorkshops || [] // Include accepted workshops
               });
             }
           });
         });
+
+        // Sort by timestamp (newest first)
+        allBookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         setBookings(allBookings);
       } catch (error) {
@@ -625,6 +716,37 @@ useEffect(() => {
 
     fetchBookings();
   }, []);
+
+  // useEffect(() => {
+  //   const fetchBookings = async () => {
+  //     try {
+  //       const usersSnapshot = await getDocs(collection(db, 'users'));
+  //       const allBookings = [];
+
+  //       usersSnapshot.forEach((doc) => {
+  //         const userData = doc.data();
+  //         const userName = userData.name || userData.email || 'Unknown User';
+  //         const emergencies = userData.emergency || [];
+
+  //         emergencies.forEach((booking) => {
+  //           if (booking.status === 'pending') {
+  //             allBookings.push({
+  //               userName,
+  //               problem: booking.problem,
+  //               address: booking.address,
+  //             });
+  //           }
+  //         });
+  //       });
+
+  //       setBookings(allBookings);
+  //     } catch (error) {
+  //       console.error('Error fetching emergency bookings:', error);
+  //     }
+  //   };
+
+  //   fetchBookings();
+  // }, []);
 
 
 
@@ -1012,7 +1134,6 @@ useEffect(() => {
 
   window.addEventListener('popstate', handlePopState);
 
-
   const handleAcceptRequest = async (booking) => {
     console.log("Booking object received:", booking);
 
@@ -1087,7 +1208,10 @@ useEffect(() => {
 
       console.log("Emergency request added to workshop successfully!");
 
-      // ✅ Update user's emergency array status to 'accepted'
+      // ✅ DON'T update user's emergency status - keep it as 'pending'
+      // This ensures the request remains visible in All Bookings until user confirms
+
+      // ✅ Only update the user's emergency to add workshop info for reference
       const userRef = doc(db, "users", userId);
       const userSnap = await getDoc(userRef);
 
@@ -1099,7 +1223,20 @@ useEffect(() => {
             e.problem === booking.problem &&
             e.address === booking.address
           ) {
-            return { ...e, status: "accepted" };
+            // ✅ Keep status as 'pending' but add acceptedWorkshops array
+            return {
+              ...e,
+              acceptedWorkshops: [
+                ...(e.acceptedWorkshops || []),
+                {
+                  workshopId: workshopId,
+                  workshopName: workshopName,
+                  workshopPhone: workshopPhone,
+                  workshopEmail: workshopEmail,
+                  acceptedAt: new Date().toISOString()
+                }
+              ]
+            };
           }
           return e;
         });
@@ -1108,17 +1245,23 @@ useEffect(() => {
           emergency: updatedEmergencies
         });
 
-        console.log("User's emergency status updated to accepted.");
+        console.log("Workshop acceptance added to user's emergency record.");
       }
 
-      alert("Emergency request accepted and saved successfully!");
+      alert("Emergency request accepted successfully!");
 
+      // ✅ Update local state to show 'accepted' status but keep in bookings
       setBookings(prevBookings =>
-        prevBookings.filter(b =>
-          (b.userId || b.id) !== userId ||
-          b.problem !== problem ||
-          b.address !== address
-        )
+        prevBookings.map(b => {
+          if (
+            (b.userId || b.id) === userId &&
+            b.problem === problem &&
+            b.address === address
+          ) {
+            return { ...b, status: "accepted", acceptedBy: workshopName };
+          }
+          return b;
+        })
       );
 
       if (!workshopInfo) {
@@ -1130,6 +1273,141 @@ useEffect(() => {
       alert(`Failed to save emergency request: ${error.message}`);
     }
   };
+
+  //   const handleAcceptRequest = async (booking) => {
+  //     console.log("Booking object received:", booking);
+
+  //     if (!auth.currentUser) {
+  //       console.error("No authenticated user found.");
+  //       alert("You must be logged in to accept requests.");
+  //       return;
+  //     }
+
+  //     const workshopId = auth.currentUser.uid;
+
+  //     let currentWorkshopInfo = workshopInfo;
+
+  //     if (!currentWorkshopInfo) {
+  //       console.log("Workshop info not in state, fetching directly...");
+  //       try {
+  //         const workshopRef = doc(db, "workshops", workshopId);
+  //         const workshopSnap = await getDoc(workshopRef);
+
+  //         if (!workshopSnap.exists()) {
+  //           console.error("Workshop document does not exist");
+  //           alert("Workshop document not found. Please contact support.");
+  //           return;
+  //         }
+
+  //         currentWorkshopInfo = workshopSnap.data();
+  //         console.log("Fetched workshop info:", currentWorkshopInfo);
+  //       } catch (error) {
+  //         console.error("Error fetching workshop info:", error);
+  //         alert("Failed to load workshop information. Please try again.");
+  //         return;
+  //       }
+  //     }
+
+  //     const userId = booking.userId || booking.id;
+  //     const userName = booking.userName || booking.customerName || 'Unknown User';
+  //     const problem = booking.problem || 'No problem specified';
+  //     const address = booking.address || 'No address provided';
+
+  //     const workshopName = currentWorkshopInfo.fullname || currentWorkshopInfo.name || 'Unknown Workshop';
+  //     const workshopPhone = currentWorkshopInfo.mobileNo || currentWorkshopInfo.phone || 'No phone';
+  //     const workshopEmail = currentWorkshopInfo.email || 'No email';
+
+  //     if (!userId) {
+  //       console.error("Missing userId in booking data");
+  //       alert("Invalid booking data: Missing user ID");
+  //       return;
+  //     }
+
+  //     const emergencyRequest = {
+  //       userId: userId,
+  //       userName: userName,
+  //       problem: problem,
+  //       address: address,
+  //       workshopId: workshopId,
+  //       workshopName: workshopName,
+  //       workshopPhone: workshopPhone,
+  //       workshopEmail: workshopEmail,
+  //       status: "accepted",
+  //       timestamp: new Date().toISOString(),
+  //       acceptedAt: new Date().toISOString(),
+  //       emergencyId: booking.emergencyId,
+  //     };
+
+  //     console.log("Emergency request object:", emergencyRequest);
+
+  //     try {
+  //       const workshopRef = doc(db, "workshops", workshopId);
+  //       await updateDoc(workshopRef, {
+  //         requestemergencyorder: arrayUnion(emergencyRequest)
+  //       });
+
+  //       console.log("Emergency request added to workshop successfully!");
+
+  //       // ✅ Update user's emergency array status to 'accepted'
+  //       const userRef = doc(db, "users", userId);
+  //       const userSnap = await getDoc(userRef);
+
+  //       if (userSnap.exists()) {
+  //         const userData = userSnap.data();
+  //         const updatedEmergencies = (userData.emergency || []).map(e => {
+  //           if (
+  //             e.emergencyId === booking.emergencyId &&
+  //             e.problem === booking.problem &&
+  //             e.address === booking.address
+  //           ) {
+  //             return { ...e, status: "accepted" };
+  //           }
+  //           return e;
+  //         });
+
+  //         await updateDoc(userRef, {
+  //           emergency: updatedEmergencies
+  //         });
+
+  //         console.log("User's emergency status updated to accepted.");
+  //       }
+
+  //       alert("Emergency request accepted and saved successfully!");
+
+  //       setBookings(prevBookings =>
+  //   prevBookings.map(b => {
+  //     if (
+  //       (b.userId || b.id) === userId &&
+  //       b.problem === problem &&
+  //       b.address === address
+  //     ) {
+  //       return { ...b, status: "accepted" };
+  //     }
+  //     return b;
+  //   })
+  // );
+
+  // if (!workshopInfo) {
+  //   setWorkshopInfo(currentWorkshopInfo);
+  // }
+
+  //       // setBookings(prevBookings =>
+  //       //   prevBookings.filter(b =>
+  //       //     (b.userId || b.id) !== userId ||
+  //       //     b.problem !== problem ||
+  //       //     b.address !== address
+  //       //   )
+  //       // );
+
+  //       // if (!workshopInfo) {
+  //       //   setWorkshopInfo(currentWorkshopInfo);
+  //       // }
+
+  //     } catch (error) {
+  //       console.error("Error handling emergency request:", error);
+  //       alert(`Failed to save emergency request: ${error.message}`);
+  //     }
+  //   };
 
   const addSelectedTimeSlot = async () => {
     if (!tempSelectedSlot) return;
@@ -1706,10 +1984,23 @@ useEffect(() => {
                   </div>
                 )}
               </div>
-              <div className="flex items-center space-x-2">
+              {/* <div className="flex items-center space-x-2">
                 <img src="./assets/images/team/bilal.jpg" alt="Admin" className="w-8 h-8 rounded-full" />
                 <span className="text-sm font-medium">Admin</span>
+              </div> */}
+              <div
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={() => navigate('/workshop-profile', { state: { fromDashboard: true } })}
+
+              >
+                <img
+                  src="./assets/images/team/bilal.jpg"
+                  alt="Admin"
+                  className="w-8 h-8 rounded-full"
+                />
+                <span className="text-sm font-medium">{fullName}</span>
               </div>
+
             </div>
           </div>
         </div>
