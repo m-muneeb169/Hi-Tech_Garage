@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import About from "./pages/aboutus.jsx";
@@ -44,7 +44,9 @@ import Tuning from "./services/Tuning.jsx";
 import Chatbot from "./components/Chatbot.jsx";
 import WorkshopProfile from './components/WorkshopProfile';
 
+
 function App() {
+  const [showChat, setShowChat] = useState(false); // ✅ state moved here
   const theme = {
     colors: {
       btn: "#007bff",
@@ -118,8 +120,11 @@ function App() {
             <Route path="/workshop-profile" element={<WorkshopProfile />} />
             <Route path="/aslam-dashboard" element={<AslamDashboard />} />
           </Routes>
-          <GoToTop />
-          <Chatbot/>
+          {/* Pass showChat as prop to GoToTop */}
+          <GoToTop hide={showChat} />
+
+          {/* Pass both showChat and setter to Chatbot */}
+          <Chatbot showChat={showChat} setShowChat={setShowChat} />
         </div>
       </ThemeProvider>
     </Router>

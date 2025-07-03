@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { FaArrowUp } from "react-icons/fa";
 
-const GoToTop = () => {
+const GoToTop = ({ hide }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   const goToTop = () => {
@@ -12,18 +12,15 @@ const GoToTop = () => {
   const listenToScroll = () => {
     const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
     const heightToHide = 20;
-
-    if (winScroll > heightToHide) {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
+    setIsVisible(winScroll > heightToHide);
   };
 
   useEffect(() => {
     window.addEventListener("scroll", listenToScroll);
     return () => window.removeEventListener("scroll", listenToScroll);
   }, []);
+
+  if (hide) return null; // ✅ hide button when chat is open
 
   return (
     <Wrapper>
@@ -33,6 +30,7 @@ const GoToTop = () => {
     </Wrapper>
   );
 };
+
 
 const Wrapper = styled.section`
   display: flex;
