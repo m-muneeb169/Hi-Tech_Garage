@@ -41,7 +41,7 @@ import CoolantChange from "./services/CoolantChange.jsx";
 import SuspensionReplacement from "./services/SuspensionReplacement.jsx";
 import TireService from "./services/TireServices.jsx";
 import Tuning from "./services/Tuning.jsx";
-import Chatbot from "./components/Chatbot";
+import Chatbot from "./components/Chatbot.jsx";
 import WorkshopProfile from './components/WorkshopProfile';
 
 function App() {

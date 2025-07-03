@@ -27,28 +27,41 @@ function Chatbot() {
     setLoading(false);
   };
 
-  const startListening = () => {
-    if (!("webkitSpeechRecognition" in window)) {
-      alert("Speech recognition not supported in this browser.");
-      return;
-    }
+const startListening = () => {
+  if (!("webkitSpeechRecognition" in window)) {
+    alert("Speech recognition not supported in this browser.");
+    return;
+  }
 
-    const recognition = new window.webkitSpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.continuous = false;
+  const recognition = new window.webkitSpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.continuous = true; // ✅ makes it more stable
 
-    recognition.onstart = () => setListening(true);
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => setListening(false);
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInput(transcript);
-    };
-
-    recognition.start();
+  recognition.onstart = () => {
+    setListening(true);
+    console.log("Mic started");
   };
+
+  recognition.onend = () => {
+    setListening(false);
+    console.log("Mic ended");
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error); // ✅ Log errors
+    setListening(false);
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    console.log("Transcript:", transcript); // ✅ log the result
+    setInput(transcript);
+  };
+
+  recognition.start();
+};
+
 
   return (
     <div className="min-h-screen bg-white text-black relative">
@@ -61,7 +74,7 @@ function Chatbot() {
         </button>
       )}
 
-      {showChat && (
+  {showChat && (
   <div className="fixed bottom-6 right-6 w-80 max-h-[500px] bg-black text-white rounded-2xl shadow-lg flex flex-col p-4 z-50">
     <button
       onClick={() => {
@@ -74,7 +87,6 @@ function Chatbot() {
     >
       <X className="w-5 h-5" />
     </button>
-
           <div className="flex-1 overflow-y-auto mt-6 mb-2 space-y-2 pr-1" style={{ maxHeight: "300px" }}>
             {messages.map((msg, i) => (
               <div
