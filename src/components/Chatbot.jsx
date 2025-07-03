@@ -62,13 +62,18 @@ function Chatbot() {
       )}
 
       {showChat && (
-        <div className="fixed bottom-6 right-6 w-80 max-h-[500px] bg-black text-white rounded-2xl shadow-lg flex flex-col p-4 z-50">
-          <button
-            onClick={() => setShowChat(false)}
-            className="absolute top-2 right-2 text-white hover:text-red-400"
-          >
-            <X className="w-5 h-5" />
-          </button>
+  <div className="fixed bottom-6 right-6 w-80 max-h-[500px] bg-black text-white rounded-2xl shadow-lg flex flex-col p-4 z-50">
+    <button
+      onClick={() => {
+        setShowChat(false);
+        setMessages([]);
+        setInput("");
+        setLoading(false);
+      }}
+      className="absolute top-2 right-2 text-white hover:text-red-400"
+    >
+      <X className="w-5 h-5" />
+    </button>
 
           <div className="flex-1 overflow-y-auto mt-6 mb-2 space-y-2 pr-1" style={{ maxHeight: "300px" }}>
             {messages.map((msg, i) => (
