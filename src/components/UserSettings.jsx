@@ -167,6 +167,10 @@
 
 
 import React, { useEffect, useState } from 'react';
+import { getAuth, onAuthStateChanged, signOut, deleteUser } from 'firebase/auth';
+import { db } from '../firebase';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 const UserSettings = () => {
   const [user, setUser] = useState(null);
@@ -180,21 +184,32 @@ const UserSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Mock auth state for demo
-    const mockUser = { uid: 'demo123' };
-    setUser(mockUser);
-    
-    // Mock user data
-    setUserData({
-      fullName: 'John Doe',
-      address: '123 Main Street, City, State',
-      contactNo: '+1 234 567 8900',
-      email: 'john.doe@example.com'
+    const auth = getAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        try {
+          const userRef = doc(db, 'users', firebaseUser.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            setUserData(userSnap.data());
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
     });
-    
-    setLoading(false);
+
+    return () => unsubscribe();
   }, []);
 
   const handleChange = (e) => {
@@ -209,22 +224,49 @@ const UserSettings = () => {
     setSaving(true);
     setMessage('');
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { ...userData });
       setMessage('✅ Changes saved successfully.');
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      setMessage('❌ Error saving changes.');
+    } finally {
       setSaving(false);
-    }, 2000);
+    }
   };
 
   const handleLogout = async () => {
-    alert('🚪 Logout functionality would be implemented here');
+    const auth = getAuth();
+    try {
+      await signOut(auth);
+      localStorage.setItem('isLoggedIn', 'false');
+      navigate('/pages/home', { replace: true });
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   const handleDeleteAccount = async () => {
     const confirmation = window.confirm("⚠️ Are you sure you want to delete your account? This action cannot be undone.");
     if (!confirmation) return;
 
-    alert('🗑️ Account deletion functionality would be implemented here');
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      // 1. Delete Firestore user document
+      await deleteDoc(doc(db, 'users', currentUser.uid));
+
+      // 2. Delete Firebase Auth account
+      await deleteUser(currentUser);
+
+      localStorage.setItem('isLoggedIn', 'false');
+      navigate('/pages/home', { replace: true });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      alert("❌ Failed to delete account. Please re-login and try again.");
+    }
   };
 
   if (loading) {
@@ -373,7 +415,7 @@ const UserSettings = () => {
               <svg className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Sign Out
+              Log Out
             </span>
           </button>
 
