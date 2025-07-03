@@ -433,88 +433,6 @@ const LoginWorkshop = () => {
           <p className="text-sm text-center">Grow your garage, serve more customers</p>
         </motion.div>
 
-<<<<<<< HEAD
-      {/* Left Side */}
-      <motion.div
-        initial={{ opacity: 0, y: -40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="md:w-1/2 w-full bg-blue-600 text-white flex flex-col items-center justify-center p-10 space-y-6"
-      >
-        <img src="/assets/images/mechanic.png" alt="Mechanic" className="w-48 rounded-lg" />
-        <h1 className="text-2xl font-bold text-center">
-          Offer your services online — bookings to emergency help.
-        </h1>
-        <p className="text-sm text-center">Grow your garage, serve more customers</p>
-      </motion.div>
-
-      {/* Right Side with animation */}
-      <motion.div
-        key={isLogin ? "login" : "signup"}
-        initial={{ opacity: 0, x: 60 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -60 }}
-        transition={{ duration: 0.5 }}
-        className="md:w-1/2 w-full flex flex-col relative"
-      >
-        {/* Fixed Heading */}
-        <div className="sticky top-0 bg-white z-10 px-8 pt-6 pb-2 shadow-md">
-          <h2 className="text-2xl font-bold text-center text-blue-700">
-            {isLogin ? "Login to Your Workshop" : "Create Workshop Account"}
-          </h2>
-          {message.text && (
-            <div
-              className={`mt-2 p-2 text-sm text-white rounded text-center ${
-                message.type === "error" ? "bg-red-600" : "bg-green-600"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-        </div>
-
-        {/* Scrollable Form */}
-        <div className="overflow-y-auto px-8 py-4 space-y-4 max-h-[70vh]">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Workshop Name</label>
-                  <input name="workshopName" value={formData.workshopName} onChange={handleChange} className="input" placeholder="Workshop Name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input name="fullName" value={formData.fullName} onChange={handleChange} className="input" placeholder="Full Name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mobile No</label>
-                  <input name="mobileNo" value={formData.mobileNo} maxLength="11" onChange={handleChange} className="input" placeholder="Mobile No" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CNIC</label>
-                  <input name="cnic" value={formData.cnic} maxLength="13" onChange={handleChange} className="input" placeholder="CNIC (13 digits)" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">NTN</label>
-                  <input name="ntn" value={formData.ntn} maxLength="7" onChange={handleChange} className="input" placeholder="NTN (7 digits)" />
-                </div>
-              </>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input name="email" type="email" value={formData.email} onChange={handleChange} className="input" placeholder="Email" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input name="password" type="password" value={formData.password} onChange={handleChange} className="input" placeholder="Password" />
-            </div>
-
-            {!isLogin && (
-              <div className="flex items-start gap-2 text-sm text-gray-700">
-                <input type="checkbox" checked={available247} onChange={(e) => setAvailable247(e.target.checked)} required />
-                <label>I confirm 24/7 emergency availability</label>
-=======
         {/* Right Side */}
         <motion.div
           key={isLogin ? "login" : "signup"}
@@ -535,7 +453,6 @@ const LoginWorkshop = () => {
                 }`}
               >
                 {message.text}
->>>>>>> b7bdec5 (name)
               </div>
             )}
           </div>
