@@ -70,6 +70,7 @@ const AslamDashboard = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [currentWorkshopId, setCurrentWorkshopId] = useState(null);
   // const currentWorkshopId = auth.currentUser?.uid;
+  
 
 
   //location map
@@ -1650,147 +1651,298 @@ useEffect(() => {
     </div>
   );
 
+
   const renderTimeSlots = () => (
-    <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-      <h2 className="text-xl font-semibold mb-4">Time Slots</h2>
+  <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+    <h2 className="text-xl font-semibold mb-4">Time Slots</h2>
 
-      {/* Time Range Input Section */}
-      <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
-        <h3 className="text-md font-medium mb-3 text-blue-700">Set Time Range for Slots</h3>
+    {/* Time Range Input Section */}
+    <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+      <h3 className="text-md font-medium mb-3 text-blue-700">Set Time Range for Slots</h3>
 
-        {errorMessage && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-            {errorMessage}
-          </div>
-        )}
+      {errorMessage && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+          {errorMessage}
+        </div>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div className="flex flex-col">
-            <label className="text-sm text-gray-600 mb-1">Select Date</label>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date) => setSelectedDate(date)}
-              dateFormat="EEEE, MMMM d, yyyy"
-              className="px-4 py-2 border rounded bg-white w-full"
-              placeholderText="Click to select a date"
-            />
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">Select Date</label>
+          <DatePicker
+            selected={selectedDate}
+            onChange={(date) => setSelectedDate(date)}
+            dateFormat="EEEE, MMMM d, yyyy"
+            className="px-4 py-2 border rounded bg-white w-full"
+            placeholderText="Click to select a date"
+          />
+        </div>
 
-          <div className="flex flex-col">
-            <label className="text-sm text-gray-600 mb-1">Start Time</label>
-            <input
-              type="text"
-              placeholder="6:00 AM"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="px-4 py-2 border rounded"
-            />
-          </div>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">Start Time</label>
+          <input
+            type="text"
+            placeholder="6:00 AM"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="px-4 py-2 border rounded"
+          />
+        </div>
 
-          <div className="flex flex-col">
-            <label className="text-sm text-gray-600 mb-1">End Time</label>
-            <input
-              type="text"
-              placeholder="8:00 PM"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="px-4 py-2 border rounded"
-            />
-          </div>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">End Time</label>
+          <input
+            type="text"
+            placeholder="8:00 PM"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            className="px-4 py-2 border rounded"
+          />
+        </div>
 
-          <div>
-            <button
-              onClick={() => {
-                setAvailableTimeSlots([]);
-                generateTimeSlots(); // must include day & date in each slot
-                setTempSelectedSlot('');
-              }}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Generate Slots
-            </button>
-          </div>
+        <div>
+          <button
+            onClick={() => {
+              const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i;
+
+              if (!timeRegex.test(startTime.trim()) || !timeRegex.test(endTime.trim())) {
+                setErrorMessage("Please follow this format to enter time: e.g., 3:00 AM or 4:00 pm");
+                setTimeout(() => setErrorMessage(''), 5000);
+                return;
+              }
+
+              setAvailableTimeSlots([]);
+              generateTimeSlots();
+              setTempSelectedSlot('');
+            }}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Generate Slots
+          </button>
         </div>
       </div>
-
-      {/* Time Slots Dropdown with Add Button */}
-      <div className="mt-8">
-        <h3 className="text-md font-medium mb-3">Select Available Time Slots</h3>
-
-        {availableTimeSlots.length > 0 ? (
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="w-full md:w-1/2">
-              <select
-                value={tempSelectedSlot}
-                onChange={(e) => setTempSelectedSlot(e.target.value)}
-                className="w-full px-4 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">-- Select Time Slot --</option>
-                {availableTimeSlots.map((slot) => (
-                  <option key={slot.id} value={slot.id.toString()}>
-                    {slot.day} - {slot.time} {slot.available ? '(Available)' : '(Booked)'}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              onClick={addSelectedTimeSlot}
-              disabled={!tempSelectedSlot}
-              className={`px-6 py-2 rounded ${tempSelectedSlot
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-            >
-              Add Slot
-            </button>
-          </div>
-        ) : (
-          <div className="text-gray-500 text-center py-8">
-            <Clock className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-            <p>No time slots to display. Please set a time range above and click "Generate Slots".</p>
-          </div>
-        )}
-
-        {/* Selected Time Slots Cards */}
-        {selectedTimeSlots.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-md font-medium mb-3">Selected Time Slots</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedTimeSlots.map((slot) => (
-                <div
-                  key={slot.id}
-                  className="p-4 rounded-lg border bg-green-50 border-green-200 shadow-sm relative"
-                >
-                  <button
-                    onClick={() => removeSelectedTimeSlot(slot.id)}
-                    className="absolute top-2 right-2 p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  <div className="mt-1 text-sm text-gray-800">
-                    <Calendar className="w-5 h-5 inline-block text-green-600 mr-2" />
-                    <span className="font-medium">{slot.time}</span>
-                  </div>
-
-                  <div className="mt-1 text-sm text-gray-600">
-                    <span>{slot.day}, {slot.date}</span>
-                  </div>
-
-                  <div className="mt-2 text-sm">
-                    <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                      Available
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
-  );
+
+    {/* Time Slots Dropdown with Add Button */}
+    <div className="mt-8">
+      <h3 className="text-md font-medium mb-3">Select Available Time Slots</h3>
+
+      {availableTimeSlots.length > 0 ? (
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div className="w-full md:w-1/2">
+            <select
+              value={tempSelectedSlot}
+              onChange={(e) => setTempSelectedSlot(e.target.value)}
+              className="w-full px-4 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select Time Slot --</option>
+              {availableTimeSlots.map((slot) => (
+                <option key={slot.id} value={slot.id.toString()}>
+                  {slot.day} - {slot.time} {slot.available ? '(Available)' : '(Booked)'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={addSelectedTimeSlot}
+            disabled={!tempSelectedSlot}
+            className={`px-6 py-2 rounded ${tempSelectedSlot
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+          >
+            Add Slot
+          </button>
+        </div>
+      ) : (
+        <div className="text-gray-500 text-center py-8">
+          <Clock className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+          <p>No time slots to display. Please set a time range above and click "Generate Slots".</p>
+        </div>
+      )}
+
+      {/* Selected Time Slots Cards */}
+      {selectedTimeSlots.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-md font-medium mb-3">Selected Time Slots</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {selectedTimeSlots.map((slot) => (
+              <div
+                key={slot.id}
+                className="p-4 rounded-lg border bg-green-50 border-green-200 shadow-sm relative"
+              >
+                <button
+                  onClick={() => removeSelectedTimeSlot(slot.id)}
+                  className="absolute top-2 right-2 p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="mt-1 text-sm text-gray-800">
+                  <Calendar className="w-5 h-5 inline-block text-green-600 mr-2" />
+                  <span className="font-medium">{slot.time}</span>
+                </div>
+
+                <div className="mt-1 text-sm text-gray-600">
+                  <span>{slot.day} {slot.date}</span>
+                </div>
+
+                <div className="mt-2 text-sm">
+                  <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                    Available
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+  // const renderTimeSlots = () => (
+  //   <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+  //     <h2 className="text-xl font-semibold mb-4">Time Slots</h2>
+
+  //     {/* Time Range Input Section */}
+  //     <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+  //       <h3 className="text-md font-medium mb-3 text-blue-700">Set Time Range for Slots</h3>
+
+  //       {errorMessage && (
+  //         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+  //           {errorMessage}
+  //         </div>
+  //       )}
+
+  //       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+  //         <div className="flex flex-col">
+  //           <label className="text-sm text-gray-600 mb-1">Select Date</label>
+  //           <DatePicker
+  //             selected={selectedDate}
+  //             onChange={(date) => setSelectedDate(date)}
+  //             dateFormat="EEEE, MMMM d, yyyy"
+  //             className="px-4 py-2 border rounded bg-white w-full"
+  //             placeholderText="Click to select a date"
+  //           />
+  //         </div>
+
+  //         <div className="flex flex-col">
+  //           <label className="text-sm text-gray-600 mb-1">Start Time</label>
+  //           <input
+  //             type="text"
+  //             placeholder="6:00 AM"
+  //             value={startTime}
+  //             onChange={(e) => setStartTime(e.target.value)}
+  //             className="px-4 py-2 border rounded"
+  //           />
+  //         </div>
+
+  //         <div className="flex flex-col">
+  //           <label className="text-sm text-gray-600 mb-1">End Time</label>
+  //           <input
+  //             type="text"
+  //             placeholder="8:00 PM"
+  //             value={endTime}
+  //             onChange={(e) => setEndTime(e.target.value)}
+  //             className="px-4 py-2 border rounded"
+  //           />
+  //         </div>
+
+  //         <div>
+  //           <button
+  //             onClick={() => {
+  //               setAvailableTimeSlots([]);
+  //               generateTimeSlots(); // must include day & date in each slot
+  //               setTempSelectedSlot('');
+  //             }}
+  //             className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+  //           >
+  //             Generate Slots
+  //           </button>
+  //         </div>
+  //       </div>
+  //     </div>
+
+  //     {/* Time Slots Dropdown with Add Button */}
+  //     <div className="mt-8">
+  //       <h3 className="text-md font-medium mb-3">Select Available Time Slots</h3>
+
+  //       {availableTimeSlots.length > 0 ? (
+  //         <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+  //           <div className="w-full md:w-1/2">
+  //             <select
+  //               value={tempSelectedSlot}
+  //               onChange={(e) => setTempSelectedSlot(e.target.value)}
+  //               className="w-full px-4 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+  //             >
+  //               <option value="">-- Select Time Slot --</option>
+  //               {availableTimeSlots.map((slot) => (
+  //                 <option key={slot.id} value={slot.id.toString()}>
+  //                   {slot.day} - {slot.time} {slot.available ? '(Available)' : '(Booked)'}
+  //                 </option>
+  //               ))}
+  //             </select>
+  //           </div>
+
+  //           <button
+  //             onClick={addSelectedTimeSlot}
+  //             disabled={!tempSelectedSlot}
+  //             className={`px-6 py-2 rounded ${tempSelectedSlot
+  //               ? 'bg-blue-600 text-white hover:bg-blue-700'
+  //               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+  //               }`}
+  //           >
+  //             Add Slot
+  //           </button>
+  //         </div>
+  //       ) : (
+  //         <div className="text-gray-500 text-center py-8">
+  //           <Clock className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+  //           <p>No time slots to display. Please set a time range above and click "Generate Slots".</p>
+  //         </div>
+  //       )}
+
+  //       {/* Selected Time Slots Cards */}
+  //       {selectedTimeSlots.length > 0 && (
+  //         <div className="mt-6">
+  //           <h3 className="text-md font-medium mb-3">Selected Time Slots</h3>
+  //           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  //             {selectedTimeSlots.map((slot) => (
+  //               <div
+  //                 key={slot.id}
+  //                 className="p-4 rounded-lg border bg-green-50 border-green-200 shadow-sm relative"
+  //               >
+  //                 <button
+  //                   onClick={() => removeSelectedTimeSlot(slot.id)}
+  //                   className="absolute top-2 right-2 p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600"
+  //                 >
+  //                   <X className="w-4 h-4" />
+  //                 </button>
+
+  //                 <div className="mt-1 text-sm text-gray-800">
+  //                   <Calendar className="w-5 h-5 inline-block text-green-600 mr-2" />
+  //                   <span className="font-medium">{slot.time}</span>
+  //                 </div>
+
+  //                 <div className="mt-1 text-sm text-gray-600">
+  //                   <span>{slot.day}, {slot.date}</span>
+  //                 </div>
+
+  //                 <div className="mt-2 text-sm">
+  //                   <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+  //                     Available
+  //                   </span>
+  //                 </div>
+  //               </div>
+  //             ))}
+  //           </div>
+  //         </div>
+  //       )}
+  //     </div>
+  //   </div>
+  // );
 
   const renderServices = () => (
     <div className="relative bg-white rounded-lg shadow-lg p-6 min-h-[300px]">

@@ -16,7 +16,6 @@ function WorkshopProfile() {
     ntn: '',
     mobileNo: '',
   });
-  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // 🧠 Handle browser back
@@ -51,7 +50,6 @@ function WorkshopProfile() {
             ntn: data.ntn || '',
             mobileNo: data.mobileNo || '',
           });
-          setOrders(data.orders || []);
         }
         setLoading(false);
       } else {
@@ -76,27 +74,6 @@ function WorkshopProfile() {
       const docRef = doc(db, 'workshops', user.uid);
       await updateDoc(docRef, formData);
       alert('Profile updated successfully!');
-    }
-  };
-
-  // ❌ Delete Order
-  const handleDeleteOrder = async (orderToDelete) => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return;
-
-    try {
-      const docRef = doc(db, 'workshops', user.uid);
-      const updatedOrders = orders.filter(order =>
-        !(order.orderPhoneNumber === orderToDelete.orderPhoneNumber &&
-          order.orderAddress === orderToDelete.orderAddress)
-      );
-      await updateDoc(docRef, {
-        orders: updatedOrders,
-      });
-      setOrders(updatedOrders);
-    } catch (error) {
-      console.error('Error deleting order:', error);
     }
   };
 
@@ -144,31 +121,8 @@ function WorkshopProfile() {
         </button>
       </div>
 
-      {/* 📦 Orders Display */}
-      <div>
-        <h2 className="text-xl font-semibold mb-3">Orders Received</h2>
-        {orders.length === 0 ? (
-          <p className="text-gray-500">No orders available.</p>
-        ) : (
-          <div className="space-y-4">
-            {orders.map((order, idx) => (
-              <div key={idx} className="border p-4 rounded shadow bg-gray-50 relative">
-                <p><strong>Phone:</strong> {order.orderPhoneNumber}</p>
-                <p><strong>Address:</strong> {order.orderAddress}</p>
-                <button
-                  onClick={() => handleDeleteOrder(order)}
-                  className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 text-sm rounded hover:bg-red-600"
-                >
-                  Delete Order
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 🔴 Logout Button (fixed bottom-right) */}
-      <div className="fixed bottom-4 right-4">
+      {/* 🔴 Logout Button (fixed bottom-left) */}
+      <div className="fixed bottom-4 left-4">
         <button
           onClick={handleLogout}
           className="bg-red-600 text-white px-4 py-2 rounded shadow-lg hover:bg-red-700 transition"
