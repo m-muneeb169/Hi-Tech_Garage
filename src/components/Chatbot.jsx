@@ -64,9 +64,39 @@ function Chatbot({ showChat, setShowChat }) {
     };
   }, [showChat]);
 
+  const allowedKeywords = [
+    "booking", "service", "maintenance", "repair", "garage", "hi-tech",
+    "onsite", "workshop", "emergency", "slot", "schedule", "dashboard",
+    "user", "request", "status", "track", "reschedule", "car", "mechanic",
+    "automobile", "vehicle", "engine", "tyre", "oil", "brake", "battery",
+    "ac", "clutch", "gear", "steering", "radiator", "suspension", "transmission",
+    "filter", "headlight", "windscreen", "exhaust", "fuel", "diagnostics",
+    "pickup", "drop", "location", "map", "issues", "problem", "noise", "leak",
+    "not starting", "broken", "stalling", "flat tyre", "overheating", "smoke",
+    "technician", "inspection", "checkup", "parts", "cost", "estimate", "quote",
+    "availability", "billing", "invoice", "payment", "confirm", "confirmation", "rescue",
+    "mobile service", "customer care", "support",
+    "hi", "hello", "hey", "help", "can you help", "please", "thank you",
+    "thanks", "who are you", "what can you do", "how does this work",
+    "repeat", "say again", "explain", "clear", "start over",
+    "سلام", "ہیلو", "کیا آپ میری مدد کر سکتے ہیں", "براہ کرم", "شکریہ",
+    "salam", "hello", "help karo", "shukriya", "please", "kaise ho",
+    "madad karo", "tum kon ho", "kya kar sakte ho", "phir se batao",
+    "samjhao", "dobara", "start se", "clear karo"
+  ];
+
+  const formatAsBullets = (text) => {
+    const lines = text
+      .split(/\n|[۔.\u06d4]/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    return lines.map((line) => `• ${line}`).join("\n");
+  };
+
   const sendMessage = async (customInput) => {
-    const finalInput = customInput || input;
+    const finalInput = (customInput || input).toLowerCase();
     if (!finalInput.trim()) return;
+
     const userMessage = { type: "user", text: finalInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -74,19 +104,30 @@ function Chatbot({ showChat, setShowChat }) {
     setTyping(true);
 
     const faqMatch = faqData.find(
-      (faq) => faq.question.toLowerCase() === finalInput.trim().toLowerCase()
+      (faq) => faq.question.toLowerCase() === finalInput.trim()
     );
 
-    const reply = faqMatch ? faqMatch.answer : await askGemini(finalInput);
+    const isRelevant = allowedKeywords.some((word) =>
+      finalInput.includes(word)
+    );
+
+    let reply;
+
+    if (faqMatch) {
+      reply = faqMatch.answer;
+    } else if (!isRelevant) {
+      reply =
+        "❗ Sorry, I can only answer questions related to Hi-Tech Garage and its services. Please ask about bookings, maintenance, emergency help, etc.";
+    } else {
+      reply = await askGemini(finalInput);
+    }
+
+    const formattedReply = formatAsBullets(reply);
 
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
-        {
-          type: "bot",
-          text: reply,
-          isCard: true,
-        },
+        { type: "bot", text: formattedReply, isCard: true }
       ]);
       setLoading(false);
       setTyping(false);
@@ -123,12 +164,11 @@ function Chatbot({ showChat, setShowChat }) {
     <div className="relative h-0 z-50">
       {!showChat && (
         <button
-  onClick={() => setShowChat(true)}
-  className="fixed bottom-6 right-6 bg-gradient-to-br from-red-600 via-blue-600 to-black text-white p-3 rounded-full shadow-lg transition duration-300 hover:scale-110 hover:shadow-xl"
->
-  <MessageSquare className="w-6 h-6" />
-</button>
-
+          onClick={() => setShowChat(true)}
+          className="fixed bottom-6 right-6 bg-gradient-to-br from-red-600 via-blue-600 to-black text-white p-3 rounded-full shadow-lg transition duration-300 hover:scale-110 hover:shadow-xl"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </button>
       )}
 
       {showChat && (
@@ -152,7 +192,6 @@ function Chatbot({ showChat, setShowChat }) {
             className="flex-1 overflow-y-auto mt-6 mb-2 space-y-2 pr-1"
             style={{ maxHeight: "350px" }}
           >
-            {/* FAQ Section */}
             <div className="bg-blue-900 rounded-lg p-3 text-sm text-blue-200 space-y-2 mb-3 animate-fade-in">
               <h3 className="font-semibold text-white text-center mb-1">FAQs</h3>
               {faqData.map((faq, i) => (
