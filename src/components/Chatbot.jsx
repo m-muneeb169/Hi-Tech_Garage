@@ -6,24 +6,91 @@ import "../index.css";
 function Chatbot({ showChat, setShowChat }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+
+  const faqData = [
+    {
+      question: "How do I book a workshop service?",
+      answer:
+        "Go to the service section and select your preferred workshop, date, and time slot.",
+    },
+    {
+      question: "What services does Hi-Tech Garage offer?",
+      answer:
+        "We offer On-Site Maintenance, At Workshop Maintenance, and Emergency Repair Requests.",
+    },
+    {
+      question: "How do I track my booking?",
+      answer:
+        "After booking, you can track status in the 'My Bookings' section of your user dashboard.",
+    },
+    {
+      question: "Can I reschedule a booking?",
+      answer:
+        "Yes, before confirmation, you can select a different time slot and date.",
+    },
+    {
+      question: "How can I contact workshop for urgent help?",
+      answer:
+        "Use the emergency request option in your dashboard to alert workshops in real-time.",
+    },
+  ];
+
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const messagesEndRef = useRef(null);
+  const chatboxRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMessage = { type: "user", text: input };
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (chatboxRef.current && !chatboxRef.current.contains(event.target)) {
+        setShowChat(false);
+        setMessages([]);
+        setInput("");
+        setLoading(false);
+      }
+    }
+    if (showChat) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showChat]);
+
+  const sendMessage = async (customInput) => {
+    const finalInput = customInput || input;
+    if (!finalInput.trim()) return;
+    const userMessage = { type: "user", text: finalInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
+    setTyping(true);
 
-    const reply = await askGemini(input);
-    setMessages((prev) => [...prev, { type: "bot", text: reply }]);
-    setLoading(false);
+    const faqMatch = faqData.find(
+      (faq) => faq.question.toLowerCase() === finalInput.trim().toLowerCase()
+    );
+
+    const reply = faqMatch ? faqMatch.answer : await askGemini(finalInput);
+
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "bot",
+          text: reply,
+          isCard: true,
+        },
+      ]);
+      setLoading(false);
+      setTyping(false);
+    }, 800);
   };
 
   const startListening = () => {
@@ -53,44 +120,69 @@ function Chatbot({ showChat, setShowChat }) {
   };
 
   return (
-   <div className="relative h-0 z-50">
-  {!showChat && (
-    <button
-      onClick={() => setShowChat(true)}
-      className="fixed bottom-6 right-6 bg-red-600 text-white p-3 rounded-full shadow-lg hover:bg-red-700 transition"
-    >
-      <MessageSquare className="w-6 h-6" />
-    </button>
-  )}
+    <div className="relative h-0 z-50">
+      {!showChat && (
+        <button
+  onClick={() => setShowChat(true)}
+  className="fixed bottom-6 right-6 bg-gradient-to-br from-red-600 via-blue-600 to-black text-white p-3 rounded-full shadow-lg transition duration-300 hover:scale-110 hover:shadow-xl"
+>
+  <MessageSquare className="w-6 h-6" />
+</button>
 
-  {showChat && (
-    <div className="fixed bottom-6 right-6 w-80 max-h-[500px] bg-black text-white rounded-2xl shadow-lg flex flex-col p-4">          <button
+      )}
+
+      {showChat && (
+        <div
+          ref={chatboxRef}
+          className="fixed bottom-6 right-6 w-[90%] sm:w-[400px] max-h-[85vh] bg-gradient-to-br from-black via-blue-900 to-black text-white rounded-2xl shadow-2xl border border-blue-600 flex flex-col p-4 animate-fade-in"
+        >
+          <button
             onClick={() => {
               setShowChat(false);
               setMessages([]);
               setInput("");
               setLoading(false);
             }}
-            className="absolute top-2 right-2 text-white hover:text-red-400"
+            className="absolute top-2 right-2 text-white hover:text-red-400 transition transform hover:rotate-90"
           >
             <X className="w-5 h-5" />
           </button>
 
-          <div className="flex-1 overflow-y-auto mt-6 mb-2 space-y-2 pr-1" style={{ maxHeight: "300px" }}>
+          <div
+            className="flex-1 overflow-y-auto mt-6 mb-2 space-y-2 pr-1"
+            style={{ maxHeight: "350px" }}
+          >
+            {/* FAQ Section */}
+            <div className="bg-blue-900 rounded-lg p-3 text-sm text-blue-200 space-y-2 mb-3 animate-fade-in">
+              <h3 className="font-semibold text-white text-center mb-1">FAQs</h3>
+              {faqData.map((faq, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(faq.question)}
+                  className="text-left hover:underline block w-full text-blue-300 transition duration-200 ease-in-out hover:scale-105"
+                >
+                  • {faq.question}
+                </button>
+              ))}
+            </div>
+
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`p-2 rounded-lg max-w-full break-words whitespace-pre-wrap ${
+                className={`p-3 rounded-xl max-w-full break-words whitespace-pre-wrap text-sm shadow-md transition-transform duration-300 ${
                   msg.type === "user"
                     ? "bg-red-600 self-end text-white"
-                    : "bg-white text-black self-start"
+                    : "bg-white text-black self-start border border-gray-300"
                 } ${/[؀-ۿ]/.test(msg.text) ? "urdu-text" : ""}`}
               >
                 {msg.text}
               </div>
             ))}
+
             {loading && (
-              <div className="text-sm text-gray-400 self-start">Typing...</div>
+              <div className="text-sm text-gray-400 self-start italic animate-pulse">
+                Typing...
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -101,12 +193,12 @@ function Chatbot({ showChat, setShowChat }) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                className="flex-1 rounded px-2 py-1 text-black w-full"
+                className="flex-1 rounded px-2 py-1 text-black w-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-400 text-sm"
                 placeholder="Ask something..."
               />
               <button
-                onClick={sendMessage}
-                className="bg-red-600 px-3 py-1 rounded hover:bg-red-700 text-white whitespace-nowrap"
+                onClick={() => sendMessage()}
+                className="bg-red-600 px-3 py-1 rounded hover:bg-red-700 text-white whitespace-nowrap text-sm transition duration-200 ease-in-out hover:scale-105"
               >
                 Send
               </button>
@@ -114,10 +206,12 @@ function Chatbot({ showChat, setShowChat }) {
             <button
               onClick={startListening}
               title={listening ? "Listening..." : "Click to speak"}
-              className="bg-gray-700 p-2 rounded-full hover:bg-gray-600 text-white flex items-center justify-center"
+              className="bg-blue-600 p-2 rounded-full hover:bg-blue-700 text-white flex items-center justify-center transition duration-200 ease-in-out hover:scale-110"
             >
               <Mic
-                className={`w-5 h-5 ${listening ? "animate-pulse text-red-400" : ""}`}
+                className={`w-5 h-5 ${
+                  listening ? "animate-pulse text-red-200" : ""
+                }`}
               />
             </button>
           </div>
