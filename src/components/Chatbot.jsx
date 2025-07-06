@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { askGemini } from "./Gemini";
 import { Mic, MessageSquare, X } from "lucide-react";
 import "../index.css";
+import { getBestMatchingFAQ } from "../lib/vectorSearch"; // ✅ adjust path if needed
 
 function Chatbot({ showChat, setShowChat }) {
   const [messages, setMessages] = useState([]);
@@ -64,26 +65,26 @@ function Chatbot({ showChat, setShowChat }) {
     };
   }, [showChat]);
 
-  const allowedKeywords = [
-    "booking", "service", "maintenance", "repair", "garage", "hi-tech",
-    "onsite", "workshop", "emergency", "slot", "schedule", "dashboard",
-    "user", "request", "status", "track", "reschedule", "car", "mechanic",
-    "automobile", "vehicle", "engine", "tyre", "oil", "brake", "battery",
-    "ac", "clutch", "gear", "steering", "radiator", "suspension", "transmission",
-    "filter", "headlight", "windscreen", "exhaust", "fuel", "diagnostics",
-    "pickup", "drop", "location", "map", "issues", "problem", "noise", "leak",
-    "not starting", "broken", "stalling", "flat tyre", "overheating", "smoke",
-    "technician", "inspection", "checkup", "parts", "cost", "estimate", "quote",
-    "availability", "billing", "invoice", "payment", "confirm", "confirmation", "rescue",
-    "mobile service", "customer care", "support",
-    "hi", "hello", "hey", "help", "can you help", "please", "thank you",
-    "thanks", "who are you", "what can you do", "how does this work",
-    "repeat", "say again", "explain", "clear", "start over",
-    "سلام", "ہیلو", "کیا آپ میری مدد کر سکتے ہیں", "براہ کرم", "شکریہ",
-    "salam", "hello", "help karo", "shukriya", "please", "kaise ho",
-    "madad karo", "tum kon ho", "kya kar sakte ho", "phir se batao",
-    "samjhao", "dobara", "start se", "clear karo"
-  ];
+  // const allowedKeywords = [
+  //   "booking", "service", "maintenance", "repair", "garage", "hi-tech",
+  //   "onsite", "workshop", "emergency", "slot", "schedule", "dashboard",
+  //   "user", "request", "status", "track", "reschedule", "car", "mechanic",
+  //   "automobile", "vehicle", "engine", "tyre", "oil", "brake", "battery",
+  //   "ac", "clutch", "gear", "steering", "radiator", "suspension", "transmission",
+  //   "filter", "headlight", "windscreen", "exhaust", "fuel", "diagnostics",
+  //   "pickup", "drop", "location", "map", "issues", "problem", "noise", "leak",
+  //   "not starting", "broken", "stalling", "flat tyre", "overheating", "smoke",
+  //   "technician", "inspection", "checkup", "parts", "cost", "estimate", "quote",
+  //   "availability", "billing", "invoice", "payment", "confirm", "confirmation", "rescue",
+  //   "mobile service", "customer care", "support",
+  //   "hi", "hello", "hey", "help", "can you help", "please", "thank you",
+  //   "thanks", "who are you", "what can you do", "how does this work",
+  //   "repeat", "say again", "explain", "clear", "start over",
+  //   "سلام", "ہیلو", "کیا آپ میری مدد کر سکتے ہیں", "براہ کرم", "شکریہ",
+  //   "salam", "hello", "help karo", "shukriya", "please", "kaise ho",
+  //   "madad karo", "tum kon ho", "kya kar sakte ho", "phir se batao",
+  //   "samjhao", "dobara", "start se", "clear karo"
+  // ];
 
   const formatAsBullets = (text) => {
     const lines = text
@@ -93,46 +94,33 @@ function Chatbot({ showChat, setShowChat }) {
     return lines.map((line) => `• ${line}`).join("\n");
   };
 
-  const sendMessage = async (customInput) => {
-    const finalInput = (customInput || input).toLowerCase();
-    if (!finalInput.trim()) return;
+const sendMessage = async (customInput) => {
+  const finalInput = (customInput || input).toLowerCase();
+  if (!finalInput.trim()) return;
 
-    const userMessage = { type: "user", text: finalInput };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
-    setTyping(true);
+  const userMessage = { type: "user", text: finalInput };
+  setMessages((prev) => [...prev, userMessage]);
+  setInput("");
+  setLoading(true);
+  setTyping(true);
 
-    const faqMatch = faqData.find(
-      (faq) => faq.question.toLowerCase() === finalInput.trim()
-    );
+  // ✅ Try Firestore-based FAQ search via Gemini wrapper
+  let reply = await askGemini(finalInput);
 
-    const isRelevant = allowedKeywords.some((word) =>
-      finalInput.includes(word)
-    );
+  const formattedReply = formatAsBullets(reply);
 
-    let reply;
+  setTimeout(() => {
+    setMessages((prev) => [
+      ...prev,
+      { type: "bot", text: formattedReply, isCard: true }
+    ]);
+    setLoading(false);
+    setTyping(false);
+  }, 800);
+};
 
-    if (faqMatch) {
-      reply = faqMatch.answer;
-    } else if (!isRelevant) {
-      reply =
-        "❗ Sorry, I can only answer questions related to Hi-Tech Garage and its services. Please ask about bookings, maintenance, emergency help, etc.";
-    } else {
-      reply = await askGemini(finalInput);
-    }
 
-    const formattedReply = formatAsBullets(reply);
 
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { type: "bot", text: formattedReply, isCard: true }
-      ]);
-      setLoading(false);
-      setTyping(false);
-    }, 800);
-  };
 
   const startListening = () => {
     if (!("webkitSpeechRecognition" in window)) {
