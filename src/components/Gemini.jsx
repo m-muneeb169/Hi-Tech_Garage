@@ -48,7 +48,15 @@ export async function askGemini(message) {
   // Final fallback to Gemini Urdu answer
   const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-  const finalPrompt = `Hi-Tech Garage کے بارے میں صرف اردو میں جواب دیں۔ سوال: ${message}`;
+ // Check if original message is in Urdu script or Roman Urdu
+const isUrdu =
+  /[اآءبپتثجچحخدذرزسشصضطظعغفقکگلمنوهی]/.test(message) ||  // Urdu letters
+  /\b(kya|kaise|kon|tum|mera|acha|nahi|haan|kyun|kahan|kitna|mujhe|apka|apki|tera|meri|theek|batao|q)\b/i.test(message); // Roman Urdu
+
+const finalPrompt = isUrdu
+  ? `Hi-Tech Garage کے بارے میں صرف اردو میں جواب دیں۔ سوال: ${message}`
+  : `Only answer questions related to Hi-Tech Garage and its services. Question: ${message}`;
+
 
   const response = await fetch(url, {
     method: "POST",
