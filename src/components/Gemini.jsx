@@ -42,7 +42,7 @@ export async function askGemini(message) {
   );
 
   if (!isRelevant) {
-    return "⚠️ معذرت! میں صرف Hi-Tech Garage اور گاڑیوں سے متعلق سوالات کے جوابات دے سکتی ہوں۔";
+    return "⚠️Sorry, I can only help with questions related to Hi-Tech Garage and car services.";
   }
 
   // Final fallback to Gemini Urdu answer

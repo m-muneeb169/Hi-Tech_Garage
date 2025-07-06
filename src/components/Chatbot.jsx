@@ -175,6 +175,11 @@ const sendMessage = async (customInput) => {
           >
             <X className="w-5 h-5" />
           </button>
+  {/* ✅ Project name heading with animation */}
+   <h2 className="text-center text-xl font-bold mb-4 text-white tracking-wide drop-shadow-lg animate-in fade-in slide-in-from-top-6 duration-700">
+  🚗 Hi-Tech Garage
+</h2>
+
 
           <div
             className="flex-1 overflow-y-auto mt-6 mb-2 space-y-2 pr-1"
