@@ -1,17 +1,62 @@
-console.log("Gemini API KEY:", process.env.REACT_APP_GEMINI_API_KEY);
+import { getBestMatchingFAQ } from "../lib/vectorSearch";
+
+const allowedKeywords = [
+  "car", "garage", "service", "workshop", "maintenance", "repair",
+  "booking", "dashboard", "mechanic", "vehicle", "engine", "tyre",
+  "emergency", "slot", "schedule", "request", "status", "reschedule",
+  "battery", "AC", "oil", "filter", "pickup", "drop", "customer care",
+  "support", "parts", "quote", "availability", "diagnostics", "help"
+];
+
+// Simple translation function using Gemini
+async function translateToEnglish(text) {
+  const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+  const prompt = `Translate this into English (if it is Roman Urdu or Urdu): ${text}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }]
+    })
+  });
+
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || text;
+}
+
 export async function askGemini(message) {
+  // Translate Urdu/Roman Urdu to English
+  const translated = await translateToEnglish(message);
+
+  // Use the translated text to get FAQ answer
+  const faqAnswer = await getBestMatchingFAQ(translated);
+
+  // If match found, return original answer (which should be in Urdu)
+  if (faqAnswer && !faqAnswer.includes("❗")) return faqAnswer;
+
+  // Check if question is relevant
+  const isRelevant = allowedKeywords.some((word) =>
+    translated.toLowerCase().includes(word)
+  );
+
+  if (!isRelevant) {
+    return "⚠️Sorry, I can only help with questions related to Hi-Tech Garage and car services.";
+  }
+
+  // Final fallback to Gemini Urdu answer
   const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+ // Check if original message is in Urdu script or Roman Urdu
+const isUrdu =
+  /[اآءبپتثجچحخدذرزسشصضطظعغفقکگلمنوهی]/.test(message) ||  // Urdu letters
+  /\b(kya|kaise|kon|tum|mera|acha|nahi|haan|kyun|kahan|kitna|mujhe|apka|apki|tera|meri|theek|batao|q)\b/i.test(message); // Roman Urdu
 
-  // Detect Urdu script or Roman Urdu keywords
-  const isUrdu =
-    /[اآءبپتثجچحخدذرزسشصضطظعغفقکگلمنوهی]/.test(message) ||
-    /\b(kya|kaise|kon|tum|mera|acha|nahi|haan|kyun|kahan|kitna|mujhe|apka|apki|tera|meri|theek|batao|q)\b/i.test(message);
+const finalPrompt = isUrdu
+  ? `Hi-Tech Garage کے بارے میں صرف اردو میں جواب دیں۔ سوال: ${message}`
+  : `Only answer questions related to Hi-Tech Garage and its services. Question: ${message}`;
 
-  // If Urdu or Roman Urdu is detected, prepend instruction for Pakistani Urdu
-  const finalPrompt = isUrdu
-    ? `Answer only in clear Pakistani Urdu (avoid Hindi vocabulary). Question: ${message}`
-    : message;
 
   const response = await fetch(url, {
     method: "POST",
@@ -22,6 +67,5 @@ export async function askGemini(message) {
   });
 
   const data = await response.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "کوئی جواب نہیں ملا۔";
 }
-
