@@ -264,8 +264,9 @@
 //     </div>
 //   );
 // };
-
 // export default Address;
+
+
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -422,65 +423,6 @@ const Address = () => {
     console.error('Error confirming order:', error);
   }
 };
-
-
-
-  // const handleConfirmBooking = async () => {
-  //   const auth = getAuth();
-  //   const db = getFirestore();
-  //   const user = auth.currentUser;
-
-  //   if (!user) return;
-
-  //   const userRef = doc(db, 'users', user.uid);
-
-  //   try {
-  //     const userSnap = await getDoc(userRef);
-  //     if (!userSnap.exists()) return;
-
-  //     const data = userSnap.data();
-  //     const orders = data.orders || [];
-
-  //     if (orders.length === 0) return;
-
-  //     const updatedOrders = [...orders];
-  //     const latestOrderIndex = updatedOrders.length - 1;
-  //     const latestOrder = updatedOrders[latestOrderIndex];
-
-  //     const orderId = uuidv4();
-
-  //     const confirmedOrder = {
-  //       ...latestOrder,
-  //       orderStatus: 'confirmed',
-  //       userId: user.uid,
-  //       orderId: orderId,
-  //     };
-
-  //     updatedOrders[latestOrderIndex] = confirmedOrder;
-
-  //     await updateDoc(userRef, {
-  //       orders: updatedOrders,
-  //     });
-
-  //     const workshopId = latestOrder?.userselectedworkshop?.id;
-
-  //     if (workshopId) {
-  //       const workshopRef = doc(db, 'workshops', workshopId);
-  //       const workshopSnap = await getDoc(workshopRef);
-  //       const workshopData = workshopSnap.exists() ? workshopSnap.data() : {};
-  //       const workshopOrders = workshopData.orders || [];
-
-  //       await updateDoc(workshopRef, {
-  //         orders: [...workshopOrders, confirmedOrder],
-  //       });
-  //     }
-
-  //     console.log('Order confirmed and saved in both collections.');
-  //     navigate('/');
-  //   } catch (error) {
-  //     console.error('Error confirming order:', error);
-  //   }
-  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
