@@ -5,7 +5,25 @@ const allowedKeywords = [
   "booking", "dashboard", "mechanic", "vehicle", "engine", "tyre",
   "emergency", "slot", "schedule", "request", "status", "reschedule",
   "battery", "AC", "oil", "filter", "pickup", "drop", "customer care",
-  "support", "parts", "quote", "availability", "diagnostics", "help"
+  "support", "parts", "quote", "availability", "diagnostics", "help",
+    "booking", "service", "maintenance", "repair", "garage", "hi-tech",
+    "onsite", "workshop", "emergency", "slot", "schedule", "dashboard",
+    "user", "request", "status", "track", "reschedule", "car", "mechanic",
+    "automobile", "vehicle", "engine", "tyre", "oil", "brake", "battery",
+    "ac", "clutch", "gear", "steering", "radiator", "suspension", "transmission",
+    "filter", "headlight", "windscreen", "exhaust", "fuel", "diagnostics",
+    "pickup", "drop", "location", "map", "issues", "problem", "noise", "leak",
+    "not starting", "broken", "stalling", "flat tyre", "overheating", "smoke",
+    "technician", "inspection", "checkup", "parts", "cost", "estimate", "quote",
+    "availability", "billing", "invoice", "payment", "confirm", "confirmation", "rescue",
+    "mobile service", "customer care", "support",
+    "hi", "hello", "hey", "help", "can you help", "please", "thank you",
+    "thanks", "who are you", "what can you do", "how does this work",
+    "repeat", "say again", "explain", "clear", "start over",
+    "سلام", "ہیلو", "کیا آپ میری مدد کر سکتے ہیں", "براہ کرم", "شکریہ",
+    "salam", "hello", "help karo", "shukriya", "please", "kaise ho",
+    "madad karo", "tum kon ho", "kya kar sakte ho", "phir se batao",
+    "samjhao", "dobara", "start se", "clear karo","and","what","next"
 ];
 
 // Simple translation function using Gemini
@@ -26,7 +44,8 @@ async function translateToEnglish(text) {
   return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || text;
 }
 
-export async function askGemini(message) {
+export async function askGemini(message, previousMessages = [])
+{
   // Translate Urdu/Roman Urdu to English
   const translated = await translateToEnglish(message);
 
@@ -53,9 +72,22 @@ const isUrdu =
   /[اآءبپتثجچحخدذرزسشصضطظعغفقکگلمنوهی]/.test(message) ||  // Urdu letters
   /\b(kya|kaise|kon|tum|mera|acha|nahi|haan|kyun|kahan|kitna|mujhe|apka|apki|tera|meri|theek|batao|q)\b/i.test(message); // Roman Urdu
 
+  let contextPrompt = "";
+if (previousMessages.length > 0) {
+  contextPrompt = previousMessages.map((msg, i) =>
+    msg.type === "user"
+      ? `User: ${msg.text}`
+      : `Bot: ${msg.text}`
+  ).join("\n");
+}
+
 const finalPrompt = isUrdu
-  ? `Hi-Tech Garage کے بارے میں صرف اردو میں جواب دیں۔ سوال: ${message}`
-  : `Only answer questions related to Hi-Tech Garage and its services. Question: ${message}`;
+  ? `${contextPrompt}\nUser: ${message}\nبراہ کرم جواب اردو میں دیں۔`
+  : `${contextPrompt}\nUser: ${message}\nPlease answer in English related to the current conversation.`;
+
+// const finalPrompt = isUrdu
+//   ? `Hi-Tech Garage کے بارے میں صرف اردو میں جواب دیں۔ سوال: ${message}`
+//   : `Only answer questions related to Hi-Tech Garage and its services. Question: ${message}`;
 
 
   const response = await fetch(url, {

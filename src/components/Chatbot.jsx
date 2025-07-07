@@ -2,12 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { askGemini } from "./Gemini";
 import { Mic, MessageSquare, X } from "lucide-react";
 import "../index.css";
-import { getBestMatchingFAQ } from "../lib/vectorSearch"; // ✅ adjust path if needed
 
 function Chatbot({ showChat, setShowChat }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
+  const [, setTyping] = useState(false);
 
   const faqData = [
     {
@@ -63,9 +62,8 @@ function Chatbot({ showChat, setShowChat }) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showChat]);
+  }, [setShowChat, showChat]);
 
-  // const allowedKeywords = [
   //   "booking", "service", "maintenance", "repair", "garage", "hi-tech",
   //   "onsite", "workshop", "emergency", "slot", "schedule", "dashboard",
   //   "user", "request", "status", "track", "reschedule", "car", "mechanic",
@@ -105,7 +103,8 @@ const sendMessage = async (customInput) => {
   setTyping(true);
 
   // ✅ Try Firestore-based FAQ search via Gemini wrapper
-  let reply = await askGemini(finalInput);
+let reply = await askGemini(finalInput, messages.slice(-4));
+
 
   const formattedReply = formatAsBullets(reply);
 
