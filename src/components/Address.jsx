@@ -362,62 +362,125 @@ const Address = () => {
     }
   };
 
+
   const handleConfirmBooking = async () => {
-    const auth = getAuth();
-    const db = getFirestore();
-    const user = auth.currentUser;
+  const auth = getAuth();
+  const db = getFirestore();
+  const user = auth.currentUser;
 
-    if (!user) return;
+  if (!user) return;
 
-    const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(db, 'users', user.uid);
 
-    try {
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) return;
+  try {
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) return;
 
-      const data = userSnap.data();
-      const orders = data.orders || [];
+    const data = userSnap.data();
+    const orders = data.orders || [];
 
-      if (orders.length === 0) return;
+    if (orders.length === 0) return;
 
-      const updatedOrders = [...orders];
-      const latestOrderIndex = updatedOrders.length - 1;
-      const latestOrder = updatedOrders[latestOrderIndex];
+    const updatedOrders = [...orders];
+    const latestOrderIndex = updatedOrders.length - 1;
+    const latestOrder = updatedOrders[latestOrderIndex];
 
-      const orderId = uuidv4();
+    const orderId = uuidv4();
 
-      const confirmedOrder = {
-        ...latestOrder,
-        orderStatus: 'confirmed',
-        userId: user.uid,
-        orderId: orderId,
-      };
+    const confirmedOrder = {
+      ...latestOrder,
+      orderStatus: 'confirmed',
+      userId: user.uid,
+      orderId: orderId,
+    };
 
-      updatedOrders[latestOrderIndex] = confirmedOrder;
+    updatedOrders[latestOrderIndex] = confirmedOrder;
 
-      await updateDoc(userRef, {
-        orders: updatedOrders,
+    await updateDoc(userRef, {
+      orders: updatedOrders,
+    });
+
+    const workshopId = latestOrder?.userselectedworkshop?.id;
+
+    if (workshopId) {
+      const workshopRef = doc(db, 'workshops', workshopId);
+      const workshopSnap = await getDoc(workshopRef);
+      const workshopData = workshopSnap.exists() ? workshopSnap.data() : {};
+      const workshopOrders = workshopData.orders || [];
+
+      await updateDoc(workshopRef, {
+        orders: [...workshopOrders, confirmedOrder],
       });
-
-      const workshopId = latestOrder?.userselectedworkshop?.id;
-
-      if (workshopId) {
-        const workshopRef = doc(db, 'workshops', workshopId);
-        const workshopSnap = await getDoc(workshopRef);
-        const workshopData = workshopSnap.exists() ? workshopSnap.data() : {};
-        const workshopOrders = workshopData.orders || [];
-
-        await updateDoc(workshopRef, {
-          orders: [...workshopOrders, confirmedOrder],
-        });
-      }
-
-      console.log('Order confirmed and saved in both collections.');
-      navigate('/');
-    } catch (error) {
-      console.error('Error confirming order:', error);
     }
-  };
+
+    // ✅ Clear OnSite form data from localStorage after confirmation
+    localStorage.removeItem('onsiteFormData');
+
+    console.log('Order confirmed and saved in both collections.');
+    navigate('/');
+  } catch (error) {
+    console.error('Error confirming order:', error);
+  }
+};
+
+
+
+  // const handleConfirmBooking = async () => {
+  //   const auth = getAuth();
+  //   const db = getFirestore();
+  //   const user = auth.currentUser;
+
+  //   if (!user) return;
+
+  //   const userRef = doc(db, 'users', user.uid);
+
+  //   try {
+  //     const userSnap = await getDoc(userRef);
+  //     if (!userSnap.exists()) return;
+
+  //     const data = userSnap.data();
+  //     const orders = data.orders || [];
+
+  //     if (orders.length === 0) return;
+
+  //     const updatedOrders = [...orders];
+  //     const latestOrderIndex = updatedOrders.length - 1;
+  //     const latestOrder = updatedOrders[latestOrderIndex];
+
+  //     const orderId = uuidv4();
+
+  //     const confirmedOrder = {
+  //       ...latestOrder,
+  //       orderStatus: 'confirmed',
+  //       userId: user.uid,
+  //       orderId: orderId,
+  //     };
+
+  //     updatedOrders[latestOrderIndex] = confirmedOrder;
+
+  //     await updateDoc(userRef, {
+  //       orders: updatedOrders,
+  //     });
+
+  //     const workshopId = latestOrder?.userselectedworkshop?.id;
+
+  //     if (workshopId) {
+  //       const workshopRef = doc(db, 'workshops', workshopId);
+  //       const workshopSnap = await getDoc(workshopRef);
+  //       const workshopData = workshopSnap.exists() ? workshopSnap.data() : {};
+  //       const workshopOrders = workshopData.orders || [];
+
+  //       await updateDoc(workshopRef, {
+  //         orders: [...workshopOrders, confirmedOrder],
+  //       });
+  //     }
+
+  //     console.log('Order confirmed and saved in both collections.');
+  //     navigate('/');
+  //   } catch (error) {
+  //     console.error('Error confirming order:', error);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
