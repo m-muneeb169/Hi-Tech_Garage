@@ -45,6 +45,7 @@ import Chatbot from "./components/Chatbot.jsx";
 import WorkshopProfile from './components/WorkshopProfile';
 
 
+
 function App() {
   const [showChat, setShowChat] = useState(false); // ✅ state moved here
   const theme = {
