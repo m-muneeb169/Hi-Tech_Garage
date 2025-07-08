@@ -121,7 +121,7 @@ function App() {
             <Route path="/aslam-dashboard" element={<AslamDashboard />} />
           </Routes>
           {/* Pass showChat as prop to GoToTop */}
-          <GoToTop hide={showChat} />
+          <GoToTop hide={showChat} /> 
 
           {/* Pass both showChat and setter to Chatbot */}
           <Chatbot showChat={showChat} setShowChat={setShowChat} />
