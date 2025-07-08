@@ -1605,6 +1605,10 @@
 // };
 
 // export default Emergency;
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase';
@@ -1617,7 +1621,7 @@ import {
   getDocs
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, MarkerF, useJsApiLoader } from '@react-google-maps/api';
 
 const containerStyle = {
   width: '100%',
@@ -1902,7 +1906,7 @@ const Emergency = () => {
               zoom={17}
               mapTypeId="roadmap"
             >
-             {location?.lat && location?.lng && <Marker position={location} />}
+             <MarkerF position={location} />
             </GoogleMap>
           </div>
           <p className="text-sm text-gray-600 mt-2">{loading ? 'Fetching address...' : address}</p>
