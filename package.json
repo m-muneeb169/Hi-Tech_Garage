@@ -7,6 +7,7 @@
     "@fontsource/open-sans": "^5.2.6",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-dialog": "^1.1.4",
+    "@react-google-maps/api": "^2.20.7",
     "@swiper/core": "^0.0.21",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
