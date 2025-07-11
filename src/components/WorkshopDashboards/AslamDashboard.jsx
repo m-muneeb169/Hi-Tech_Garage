@@ -116,25 +116,25 @@ const AslamDashboard = () => {
       },
     ],
   };
-//fetch workshop's admin's name
-useEffect(() => {
-  const fetchWorkshopName = async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
+  //fetch workshop's admin's name
+  useEffect(() => {
+    const fetchWorkshopName = async () => {
+      const auth = getAuth();
+      const user = auth.currentUser;
 
-    if (user) {
-      const docRef = doc(db, 'workshops', user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setFullName(docSnap.data().fullName || 'Workshop');
-      } else {
-        setFullName('Workshop');
+      if (user) {
+        const docRef = doc(db, 'workshops', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setFullName(docSnap.data().fullName || 'Workshop');
+        } else {
+          setFullName('Workshop');
+        }
       }
-    }
-  };
+    };
 
-  fetchWorkshopName();
-}, []);
+    fetchWorkshopName();
+  }, []);
 
   // refresh karne p data naa ghaib ho completed requests ka 
   const refreshConfirmedEmergencies = async () => {
@@ -286,259 +286,259 @@ useEffect(() => {
   }, [currentWorkshopId]);
 
 
-// pending, active, completed counts
+  // pending, active, completed counts
 
 
-useEffect(() => {
-  const unsubscribers = [];
-  let activeOrderIds = new Set();
-  let completedOrderIds = new Set();
-  let pendingOrderIds = new Set();
-  let totalEarningsSoFar = 0;
+  useEffect(() => {
+    const unsubscribers = [];
+    let activeOrderIds = new Set();
+    let completedOrderIds = new Set();
+    let pendingOrderIds = new Set();
+    let totalEarningsSoFar = 0;
 
-  const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const workshopId = user.uid;
-      const usersSnapshot = await getDocs(collection(db, 'users'));
-      const initialBookings = [];
-      const initialCompletedOrders = [];
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const workshopId = user.uid;
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const initialBookings = [];
+        const initialCompletedOrders = [];
 
-      // Reset counts
-      activeOrderIds.clear();
-      completedOrderIds.clear();
-      pendingOrderIds.clear();
-      totalEarningsSoFar = 0;
+        // Reset counts
+        activeOrderIds.clear();
+        completedOrderIds.clear();
+        pendingOrderIds.clear();
+        totalEarningsSoFar = 0;
 
-      // Get workshop's current orders to check status
-      const workshopRef = doc(db, 'workshops', workshopId);
-      const workshopDoc = await getDoc(workshopRef);
-      const workshopOrders = workshopDoc.exists() ? workshopDoc.data().orders || [] : [];
+        // Get workshop's current orders to check status
+        const workshopRef = doc(db, 'workshops', workshopId);
+        const workshopDoc = await getDoc(workshopRef);
+        const workshopOrders = workshopDoc.exists() ? workshopDoc.data().orders || [] : [];
 
-      for (const userDoc of usersSnapshot.docs) {
-        const userData = userDoc.data();
-        const orders = userData.orders || [];
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const orders = userData.orders || [];
 
-        for (let index = 0; index < orders.length; index++) {
-          const order = orders[index];
-          const selectedWorkshop = order.userselectedworkshop;
+          for (let index = 0; index < orders.length; index++) {
+            const order = orders[index];
+            const selectedWorkshop = order.userselectedworkshop;
 
-          if (selectedWorkshop && selectedWorkshop.id === workshopId) {
-            // Check if this order exists in workshop's orders array
-            const matchingWorkshopOrder = workshopOrders.find(
-              (wOrder) =>
-                wOrder.userId === userDoc.id &&
-                wOrder.orderId === order.orderId
-            );
+            if (selectedWorkshop && selectedWorkshop.id === workshopId) {
+              // Check if this order exists in workshop's orders array
+              const matchingWorkshopOrder = workshopOrders.find(
+                (wOrder) =>
+                  wOrder.userId === userDoc.id &&
+                  wOrder.orderId === order.orderId
+              );
 
-            let orderStatus = 'pending'; // Default status for new orders
-            let completedDate = null;
-            
-            if (matchingWorkshopOrder && matchingWorkshopOrder.workshoporderstatus) {
-              orderStatus = matchingWorkshopOrder.workshoporderstatus;
-              completedDate = matchingWorkshopOrder.completedDate || null;
-            }
+              let orderStatus = 'pending'; // Default status for new orders
+              let completedDate = null;
 
-            const bookingObj = {
-              id: userDoc.id,
-              customerName: userData.fullName || 'Unknown',
-              service: Array.isArray(order.userselectedservices)
-                ? order.userselectedservices
-                  .map(service => `${service.name} - ${service.price} PKR`)
-                  .join(', ')
-                : 'No Services Selected',
-              typeOrder: order.typeOrder || 'N/A',
-              status: orderStatus,
-              orderIndex: index,
-              workshopId: selectedWorkshop.id,
-              orderId: order.orderId,
-              completedDate: completedDate,
-              earnings: orderStatus === 'completed' ? 
-                (Array.isArray(order.userselectedservices) ? 
-                  order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0) : 0
-            };
-
-            if (orderStatus === 'completed') {
-              initialCompletedOrders.push(bookingObj);
-            } else {
-              initialBookings.push(bookingObj);
-            }
-
-            // Count orders based on their status
-            if (orderStatus === 'active') {
-              activeOrderIds.add(order.orderId);
-            } else if (orderStatus === 'completed') {
-              completedOrderIds.add(order.orderId);
-              // Calculate earnings for completed orders
-              if (Array.isArray(order.userselectedservices)) {
-                order.userselectedservices.forEach(service => {
-                  totalEarningsSoFar += parseFloat(service.price) || 0;
-                });
+              if (matchingWorkshopOrder && matchingWorkshopOrder.workshoporderstatus) {
+                orderStatus = matchingWorkshopOrder.workshoporderstatus;
+                completedDate = matchingWorkshopOrder.completedDate || null;
               }
-            } else if (orderStatus === 'pending') {
-              pendingOrderIds.add(order.orderId);
-            }
 
-            // Setup listener for this specific workshop
-            const unsubscribe = onSnapshot(workshopRef, (docSnap) => {
-              if (docSnap.exists()) {
-                const workshopData = docSnap.data();
-                const currentWorkshopOrders = workshopData.orders || [];
+              const bookingObj = {
+                id: userDoc.id,
+                customerName: userData.fullName || 'Unknown',
+                service: Array.isArray(order.userselectedservices)
+                  ? order.userselectedservices
+                    .map(service => `${service.name} - ${service.price} PKR`)
+                    .join(', ')
+                  : 'No Services Selected',
+                typeOrder: order.typeOrder || 'N/A',
+                status: orderStatus,
+                orderIndex: index,
+                workshopId: selectedWorkshop.id,
+                orderId: order.orderId,
+                completedDate: completedDate,
+                earnings: orderStatus === 'completed' ?
+                  (Array.isArray(order.userselectedservices) ?
+                    order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0) : 0
+              };
 
-                const currentMatchingOrder = currentWorkshopOrders.find(
-                  (wOrder) =>
-                    wOrder.userId === userDoc.id &&
-                    wOrder.orderId === order.orderId
-                );
+              if (orderStatus === 'completed') {
+                initialCompletedOrders.push(bookingObj);
+              } else {
+                initialBookings.push(bookingObj);
+              }
 
-                if (currentMatchingOrder && currentMatchingOrder.workshoporderstatus) {
-                  const newStatus = currentMatchingOrder.workshoporderstatus;
-                  const newCompletedDate = currentMatchingOrder.completedDate || null;
-                  
-                  // Update the booking status in state
-                  setDataDashboard(prev => {
-                    const updated = prev.recentBookings.map(b => {
-                      if (
-                        b.id === userDoc.id &&
-                        b.orderIndex === index &&
-                        b.workshopId === selectedWorkshop.id
-                      ) {
-                        return {
-                          ...b,
-                          status: newStatus,
-                          completedDate: newCompletedDate
-                        };
-                      }
-                      return b;
-                    });
-
-                    // If status changed to completed, move to completed orders
-                    if (newStatus === 'completed') {
-                      const completedOrder = updated.find(b => 
-                        b.id === userDoc.id && 
-                        b.orderIndex === index && 
-                        b.workshopId === selectedWorkshop.id
-                      );
-                      
-                      if (completedOrder) {
-                        // Calculate earnings for this completed order
-                        const earnings = Array.isArray(order.userselectedservices) ? 
-                          order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0;
-                        
-                        completedOrder.earnings = earnings;
-                        completedOrder.completedDate = newCompletedDate;
-                        
-                        // Add to completed orders
-                        setCompletedOrders(prevCompleted => {
-                          const exists = prevCompleted.some(co => 
-                            co.id === completedOrder.id && 
-                            co.orderIndex === completedOrder.orderIndex &&
-                            co.workshopId === completedOrder.workshopId
-                          );
-                          
-                          if (!exists) {
-                            return [...prevCompleted, completedOrder];
-                          }
-                          return prevCompleted.map(co => 
-                            co.id === completedOrder.id && 
-                            co.orderIndex === completedOrder.orderIndex &&
-                            co.workshopId === completedOrder.workshopId
-                            ? completedOrder : co
-                          );
-                        });
-                        
-                        // Remove from recent bookings
-                        return {
-                          ...prev,
-                          recentBookings: updated.filter(b => 
-                            !(b.id === userDoc.id && 
-                              b.orderIndex === index && 
-                              b.workshopId === selectedWorkshop.id)
-                          )
-                        };
-                      }
-                    }
-
-                    return { ...prev, recentBookings: updated };
+              // Count orders based on their status
+              if (orderStatus === 'active') {
+                activeOrderIds.add(order.orderId);
+              } else if (orderStatus === 'completed') {
+                completedOrderIds.add(order.orderId);
+                // Calculate earnings for completed orders
+                if (Array.isArray(order.userselectedservices)) {
+                  order.userselectedservices.forEach(service => {
+                    totalEarningsSoFar += parseFloat(service.price) || 0;
                   });
                 }
-
-                // Recalculate counts based on current workshop orders
-                const newActiveIds = new Set();
-                const newCompletedIds = new Set();
-                const newPendingIds = new Set();
-                let newTotalEarnings = 0;
-
-                // Get all orders for this workshop from users collection
-                const allWorkshopOrders = [];
-                [...initialBookings, ...initialCompletedOrders].forEach(booking => {
-                  const workshopOrder = currentWorkshopOrders.find(
-                    wo => wo.userId === booking.id && wo.orderId === booking.orderId
-                  );
-                  
-                  if (workshopOrder) {
-                    allWorkshopOrders.push(workshopOrder);
-                  } else {
-                    // If not in workshop orders, it's pending
-                    newPendingIds.add(booking.orderId);
-                  }
-                });
-
-                // Count based on workshop orders status
-                allWorkshopOrders.forEach(order => {
-                  if (order.workshoporderstatus === 'active') {
-                    newActiveIds.add(order.orderId);
-                  } else if (order.workshoporderstatus === 'completed') {
-                    newCompletedIds.add(order.orderId);
-                    // Calculate earnings
-                    if (Array.isArray(order.userselectedservices)) {
-                      order.userselectedservices.forEach(service => {
-                        newTotalEarnings += parseFloat(service.price) || 0;
-                      });
-                    }
-                  } else if (order.workshoporderstatus === 'pending') {
-                    newPendingIds.add(order.orderId);
-                  }
-                });
-
-                setActiveCount(newActiveIds.size);
-                setCompletedCount(newCompletedIds.size);
-                setPendingCount(newPendingIds.size);
-                setTotalEarnings(newTotalEarnings);
+              } else if (orderStatus === 'pending') {
+                pendingOrderIds.add(order.orderId);
               }
-            });
 
-            unsubscribers.push(unsubscribe);
+              // Setup listener for this specific workshop
+              const unsubscribe = onSnapshot(workshopRef, (docSnap) => {
+                if (docSnap.exists()) {
+                  const workshopData = docSnap.data();
+                  const currentWorkshopOrders = workshopData.orders || [];
+
+                  const currentMatchingOrder = currentWorkshopOrders.find(
+                    (wOrder) =>
+                      wOrder.userId === userDoc.id &&
+                      wOrder.orderId === order.orderId
+                  );
+
+                  if (currentMatchingOrder && currentMatchingOrder.workshoporderstatus) {
+                    const newStatus = currentMatchingOrder.workshoporderstatus;
+                    const newCompletedDate = currentMatchingOrder.completedDate || null;
+
+                    // Update the booking status in state
+                    setDataDashboard(prev => {
+                      const updated = prev.recentBookings.map(b => {
+                        if (
+                          b.id === userDoc.id &&
+                          b.orderIndex === index &&
+                          b.workshopId === selectedWorkshop.id
+                        ) {
+                          return {
+                            ...b,
+                            status: newStatus,
+                            completedDate: newCompletedDate
+                          };
+                        }
+                        return b;
+                      });
+
+                      // If status changed to completed, move to completed orders
+                      if (newStatus === 'completed') {
+                        const completedOrder = updated.find(b =>
+                          b.id === userDoc.id &&
+                          b.orderIndex === index &&
+                          b.workshopId === selectedWorkshop.id
+                        );
+
+                        if (completedOrder) {
+                          // Calculate earnings for this completed order
+                          const earnings = Array.isArray(order.userselectedservices) ?
+                            order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0;
+
+                          completedOrder.earnings = earnings;
+                          completedOrder.completedDate = newCompletedDate;
+
+                          // Add to completed orders
+                          setCompletedOrders(prevCompleted => {
+                            const exists = prevCompleted.some(co =>
+                              co.id === completedOrder.id &&
+                              co.orderIndex === completedOrder.orderIndex &&
+                              co.workshopId === completedOrder.workshopId
+                            );
+
+                            if (!exists) {
+                              return [...prevCompleted, completedOrder];
+                            }
+                            return prevCompleted.map(co =>
+                              co.id === completedOrder.id &&
+                                co.orderIndex === completedOrder.orderIndex &&
+                                co.workshopId === completedOrder.workshopId
+                                ? completedOrder : co
+                            );
+                          });
+
+                          // Remove from recent bookings
+                          return {
+                            ...prev,
+                            recentBookings: updated.filter(b =>
+                              !(b.id === userDoc.id &&
+                                b.orderIndex === index &&
+                                b.workshopId === selectedWorkshop.id)
+                            )
+                          };
+                        }
+                      }
+
+                      return { ...prev, recentBookings: updated };
+                    });
+                  }
+
+                  // Recalculate counts based on current workshop orders
+                  const newActiveIds = new Set();
+                  const newCompletedIds = new Set();
+                  const newPendingIds = new Set();
+                  let newTotalEarnings = 0;
+
+                  // Get all orders for this workshop from users collection
+                  const allWorkshopOrders = [];
+                  [...initialBookings, ...initialCompletedOrders].forEach(booking => {
+                    const workshopOrder = currentWorkshopOrders.find(
+                      wo => wo.userId === booking.id && wo.orderId === booking.orderId
+                    );
+
+                    if (workshopOrder) {
+                      allWorkshopOrders.push(workshopOrder);
+                    } else {
+                      // If not in workshop orders, it's pending
+                      newPendingIds.add(booking.orderId);
+                    }
+                  });
+
+                  // Count based on workshop orders status
+                  allWorkshopOrders.forEach(order => {
+                    if (order.workshoporderstatus === 'active') {
+                      newActiveIds.add(order.orderId);
+                    } else if (order.workshoporderstatus === 'completed') {
+                      newCompletedIds.add(order.orderId);
+                      // Calculate earnings
+                      if (Array.isArray(order.userselectedservices)) {
+                        order.userselectedservices.forEach(service => {
+                          newTotalEarnings += parseFloat(service.price) || 0;
+                        });
+                      }
+                    } else if (order.workshoporderstatus === 'pending') {
+                      newPendingIds.add(order.orderId);
+                    }
+                  });
+
+                  setActiveCount(newActiveIds.size);
+                  setCompletedCount(newCompletedIds.size);
+                  setPendingCount(newPendingIds.size);
+                  setTotalEarnings(newTotalEarnings);
+                }
+              });
+
+              unsubscribers.push(unsubscribe);
+            }
           }
         }
+
+        // Set initial counts and data
+        setActiveCount(activeOrderIds.size);
+        setCompletedCount(completedOrderIds.size);
+        setPendingCount(pendingOrderIds.size);
+        setTotalEarnings(totalEarningsSoFar);
+        setDataDashboard(prev => ({ ...prev, recentBookings: initialBookings }));
+        setCompletedOrders(initialCompletedOrders);
+
+      } else {
+        // User Logout — listeners close karo, data clear karo
+        unsubscribers.forEach(unsub => unsub());
+        setDataDashboard({ recentBookings: [] });
+        setCompletedOrders([]);
+        setActiveCount(0);
+        setCompletedCount(0);
+        setPendingCount(0);
+        setTotalEarnings(0);
       }
+    });
 
-      // Set initial counts and data
-      setActiveCount(activeOrderIds.size);
-      setCompletedCount(completedOrderIds.size);
-      setPendingCount(pendingOrderIds.size);
-      setTotalEarnings(totalEarningsSoFar);
-      setDataDashboard(prev => ({ ...prev, recentBookings: initialBookings }));
-      setCompletedOrders(initialCompletedOrders);
-
-    } else {
-      // User Logout — listeners close karo, data clear karo
+    return () => {
+      // Component unmount hone par bhi sab cleanup ho
       unsubscribers.forEach(unsub => unsub());
-      setDataDashboard({ recentBookings: [] });
-      setCompletedOrders([]);
-      setActiveCount(0);
-      setCompletedCount(0);
-      setPendingCount(0);
-      setTotalEarnings(0);
-    }
-  });
+      unsubscribeAuth();
+    };
+  }, []);
 
-  return () => {
-    // Component unmount hone par bhi sab cleanup ho
-    unsubscribers.forEach(unsub => unsub());
-    unsubscribeAuth();
-  };
-}, []);
-  
 
 
   useEffect(() => {
@@ -1363,314 +1363,266 @@ useEffect(() => {
 
   //Recent Bookings Table 
   const renderBookings = () => (
-  <div className="space-y-6">
-    {/* Recent Bookings Table */}
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Recent Bookings</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">ID</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Customer</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Service</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Type</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dataDashboard.recentBookings
-              .filter(booking => booking.status !== 'completed') // Hide completed orders from recent bookings
-              .map((booking) => (
-                <tr key={`${booking.id}-${booking.orderIndex}`} className="border-t">
-                  <td className="px-4 py-3 text-sm">{booking.id}</td>
-                  <td className="px-4 py-3 text-sm">{booking.customerName}</td>
-                  <td className="px-4 py-3 text-sm">{booking.service}</td>
-                  <td className="px-4 py-3 text-sm">{booking.typeOrder}</td>
+    <div className="space-y-6">
+      {/* Recent Bookings Table */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Bookings</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">ID</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Customer</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Service</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Type</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dataDashboard.recentBookings
+                .filter(booking => booking.status !== 'completed') // Hide completed orders from recent bookings
+                .map((booking) => (
+                  <tr key={`${booking.id}-${booking.orderIndex}`} className="border-t">
+                    <td className="px-4 py-3 text-sm">{booking.id}</td>
+                    <td className="px-4 py-3 text-sm">{booking.customerName}</td>
+                    <td className="px-4 py-3 text-sm">{booking.service}</td>
+                    <td className="px-4 py-3 text-sm">{booking.typeOrder}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs ${booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          booking.status === 'active' ? 'bg-blue-100 text-blue-800' :
+                            booking.status === 'completed' ? 'bg-green-500 text-white' :
+                              'bg-gray-100 text-gray-800'
+                        }`}>
+                        {booking.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <button
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => openViewDetail(booking.id, booking.orderIndex)}
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+          {dataDashboard.recentBookings.filter(booking => booking.status !== 'completed').length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No pending or active bookings
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Completed Orders Table */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-semibold mb-4 flex items-center">
+          <span className="mr-2">Completed Orders</span>
+          <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+            {completedOrders.length}
+          </span>
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">ID</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Customer</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Service</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Type</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Earnings</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Completed Date</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {completedOrders.map((order) => (
+                <tr key={`${order.id}-${order.orderIndex}`} className="border-t">
+                  <td className="px-4 py-3 text-sm">{order.id}</td>
+                  <td className="px-4 py-3 text-sm">{order.customerName}</td>
+                  <td className="px-4 py-3 text-sm">{order.service}</td>
+                  <td className="px-4 py-3 text-sm">{order.typeOrder}</td>
+                  <td className="px-4 py-3 text-sm text-green-600 font-semibold">
+                    PKR {order.earnings?.toFixed(2) || '0.00'}
+                  </td>
                   <td className="px-4 py-3 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      booking.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                      booking.status === 'completed' ? 'bg-green-500 text-white' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {booking.status}
-                    </span>
+                    {order.completedDate ? new Date(order.completedDate).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <button
                       className="text-blue-600 hover:text-blue-800"
-                      onClick={() => openViewDetail(booking.id, booking.orderIndex)}
+                      onClick={() => openViewDetail(order.id, order.orderIndex)}
                     >
                       View Details
                     </button>
                   </td>
                 </tr>
               ))}
-          </tbody>
-        </table>
-        {dataDashboard.recentBookings.filter(booking => booking.status !== 'completed').length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No pending or active bookings
-          </div>
-        )}
+            </tbody>
+          </table>
+          {completedOrders.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No completed orders yet
+            </div>
+          )}
+        </div>
       </div>
     </div>
-
-    {/* Completed Orders Table */}
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-xl font-semibold mb-4 flex items-center">
-        <span className="mr-2">Completed Orders</span>
-        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-          {completedOrders.length}
-        </span>
-      </h2>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">ID</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Customer</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Service</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Type</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Earnings</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Completed Date</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {completedOrders.map((order) => (
-              <tr key={`${order.id}-${order.orderIndex}`} className="border-t">
-                <td className="px-4 py-3 text-sm">{order.id}</td>
-                <td className="px-4 py-3 text-sm">{order.customerName}</td>
-                <td className="px-4 py-3 text-sm">{order.service}</td>
-                <td className="px-4 py-3 text-sm">{order.typeOrder}</td>
-                <td className="px-4 py-3 text-sm text-green-600 font-semibold">
-                  PKR {order.earnings?.toFixed(2) || '0.00'}
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  {order.completedDate ? new Date(order.completedDate).toLocaleDateString() : 'N/A'}
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  <button
-                    className="text-blue-600 hover:text-blue-800"
-                    onClick={() => openViewDetail(order.id, order.orderIndex)}
-                  >
-                    View Details
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {completedOrders.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No completed orders yet
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-);
-
-
-  // const renderBookings = () => (
-  //   <div className="bg-white rounded-lg shadow-lg p-6">
-  //     <h2 className="text-xl font-semibold mb-4">Recent Bookings</h2>
-  //     <div className="overflow-x-auto">
-  //       <table className="w-full">
-  //         <thead>
-  //           <tr className="bg-gray-50">
-  //             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">ID</th>
-  //             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Customer</th>
-  //             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Service</th>
-  //             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Type</th>
-  //             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
-  //             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
-  //           </tr>
-  //         </thead>
-  //         <tbody>
-  //           {dataDashboard.recentBookings.map((booking) => (
-  //             <tr key={booking.id} className="border-t">
-  //               <td className="px-4 py-3 text-sm">{booking.id}</td>
-  //               <td className="px-4 py-3 text-sm">{booking.customerName}</td>
-  //               <td className="px-4 py-3 text-sm">{booking.service}</td>
-  //               <td className="px-4 py-3 text-sm">{booking.typeOrder}</td>
-  //               <td className="px-4 py-3 text-sm">
-  //                 <span className={`px-2 py-1 rounded-full text-xs ${booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-  //                   booking.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-  //                     booking.status === 'Completed' ? 'bg-green-500 text-white' :
-  //                       'bg-gray-100 text-gray-800' // default color if status doesn't match
-  //                   }`}>{booking.status}
-  //                 </span>
-  //               </td>
-  //               <td className="px-4 py-3 text-sm">
-  //                 <button
-  //                   className="text-blue-600 hover:text-blue-800"
-  //                   onClick={() => openViewDetail(booking.id, booking.orderIndex)}
-  //                 >
-  //                   View Details
-  //                 </button>
-  //               </td>
-  //             </tr>
-  //           ))}
-  //         </tbody>
-  //       </table>
-  //     </div>
-  //   </div>
-  // );
+  );
 
 
   const renderTimeSlots = () => (
-  <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-    <h2 className="text-xl font-semibold mb-4">Time Slots</h2>
+    <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+      <h2 className="text-xl font-semibold mb-4">Time Slots</h2>
 
-    {/* Time Range Input Section */}
-    <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
-      <h3 className="text-md font-medium mb-3 text-blue-700">Set Time Range for Slots</h3>
+      {/* Time Range Input Section */}
+      <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+        <h3 className="text-md font-medium mb-3 text-blue-700">Set Time Range for Slots</h3>
 
-      {errorMessage && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-          {errorMessage}
-        </div>
-      )}
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+            {errorMessage}
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        <div className="flex flex-col">
-          <label className="text-sm text-gray-600 mb-1">Select Date</label>
-          <DatePicker
-            selected={selectedDate}
-            onChange={(date) => setSelectedDate(date)}
-            dateFormat="EEEE, MMMM d, yyyy"
-            className="px-4 py-2 border rounded bg-white w-full"
-            placeholderText="Click to select a date"
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="flex flex-col">
+            <label className="text-sm text-gray-600 mb-1">Select Date</label>
+            <DatePicker
+              selected={selectedDate}
+              onChange={(date) => setSelectedDate(date)}
+              dateFormat="EEEE, MMMM d, yyyy"
+              className="px-4 py-2 border rounded bg-white w-full"
+              placeholderText="Click to select a date"
+            />
+          </div>
 
-        <div className="flex flex-col">
-          <label className="text-sm text-gray-600 mb-1">Start Time</label>
-          <input
-            type="text"
-            placeholder="6:00 AM"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="px-4 py-2 border rounded"
-          />
-        </div>
+          <div className="flex flex-col">
+            <label className="text-sm text-gray-600 mb-1">Start Time</label>
+            <input
+              type="text"
+              placeholder="6:00 AM"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="px-4 py-2 border rounded"
+            />
+          </div>
 
-        <div className="flex flex-col">
-          <label className="text-sm text-gray-600 mb-1">End Time</label>
-          <input
-            type="text"
-            placeholder="8:00 PM"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="px-4 py-2 border rounded"
-          />
-        </div>
+          <div className="flex flex-col">
+            <label className="text-sm text-gray-600 mb-1">End Time</label>
+            <input
+              type="text"
+              placeholder="8:00 PM"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="px-4 py-2 border rounded"
+            />
+          </div>
 
-        <div>
-          <button
-            onClick={() => {
-              const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i;
+          <div>
+            <button
+              onClick={() => {
+                const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i;
 
-              if (!timeRegex.test(startTime.trim()) || !timeRegex.test(endTime.trim())) {
-                setErrorMessage("Please follow this format to enter time: e.g., 3:00 AM or 4:00 pm");
-                setTimeout(() => setErrorMessage(''), 5000);
-                return;
-              }
+                if (!timeRegex.test(startTime.trim()) || !timeRegex.test(endTime.trim())) {
+                  setErrorMessage("Please follow this format to enter time: e.g., 3:00 AM or 4:00 pm");
+                  setTimeout(() => setErrorMessage(''), 5000);
+                  return;
+                }
 
-              setAvailableTimeSlots([]);
-              generateTimeSlots();
-              setTempSelectedSlot('');
-            }}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Generate Slots
-          </button>
+                setAvailableTimeSlots([]);
+                generateTimeSlots();
+                setTempSelectedSlot('');
+              }}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Generate Slots
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Time Slots Dropdown with Add Button */}
-    <div className="mt-8">
-      <h3 className="text-md font-medium mb-3">Select Available Time Slots</h3>
+      {/* Time Slots Dropdown with Add Button */}
+      <div className="mt-8">
+        <h3 className="text-md font-medium mb-3">Select Available Time Slots</h3>
 
-      {availableTimeSlots.length > 0 ? (
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <div className="w-full md:w-1/2">
-            <select
-              value={tempSelectedSlot}
-              onChange={(e) => setTempSelectedSlot(e.target.value)}
-              className="w-full px-4 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- Select Time Slot --</option>
-              {availableTimeSlots.map((slot) => (
-                <option key={slot.id} value={slot.id.toString()}>
-                  {slot.day} - {slot.time} {slot.available ? '(Available)' : '(Booked)'}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            onClick={addSelectedTimeSlot}
-            disabled={!tempSelectedSlot}
-            className={`px-6 py-2 rounded ${tempSelectedSlot
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-          >
-            Add Slot
-          </button>
-        </div>
-      ) : (
-        <div className="text-gray-500 text-center py-8">
-          <Clock className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-          <p>No time slots to display. Please set a time range above and click "Generate Slots".</p>
-        </div>
-      )}
-
-      {/* Selected Time Slots Cards */}
-      {selectedTimeSlots.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-md font-medium mb-3">Selected Time Slots</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {selectedTimeSlots.map((slot) => (
-              <div
-                key={slot.id}
-                className="p-4 rounded-lg border bg-green-50 border-green-200 shadow-sm relative"
+        {availableTimeSlots.length > 0 ? (
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="w-full md:w-1/2">
+              <select
+                value={tempSelectedSlot}
+                onChange={(e) => setTempSelectedSlot(e.target.value)}
+                className="w-full px-4 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <button
-                  onClick={() => removeSelectedTimeSlot(slot.id)}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <option value="">-- Select Time Slot --</option>
+                {availableTimeSlots.map((slot) => (
+                  <option key={slot.id} value={slot.id.toString()}>
+                    {slot.day} - {slot.time} {slot.available ? '(Available)' : '(Booked)'}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <div className="mt-1 text-sm text-gray-800">
-                  <Calendar className="w-5 h-5 inline-block text-green-600 mr-2" />
-                  <span className="font-medium">{slot.time}</span>
-                </div>
-
-                <div className="mt-1 text-sm text-gray-600">
-                  <span>{slot.day} {slot.date}</span>
-                </div>
-
-                <div className="mt-2 text-sm">
-                  <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                    Available
-                  </span>
-                </div>
-              </div>
-            ))}
+            <button
+              onClick={addSelectedTimeSlot}
+              disabled={!tempSelectedSlot}
+              className={`px-6 py-2 rounded ${tempSelectedSlot
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+            >
+              Add Slot
+            </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-gray-500 text-center py-8">
+            <Clock className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+            <p>No time slots to display. Please set a time range above and click "Generate Slots".</p>
+          </div>
+        )}
+
+        {/* Selected Time Slots Cards */}
+        {selectedTimeSlots.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-md font-medium mb-3">Selected Time Slots</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {selectedTimeSlots.map((slot) => (
+                <div
+                  key={slot.id}
+                  className="p-4 rounded-lg border bg-green-50 border-green-200 shadow-sm relative"
+                >
+                  <button
+                    onClick={() => removeSelectedTimeSlot(slot.id)}
+                    className="absolute top-2 right-2 p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
+                  <div className="mt-1 text-sm text-gray-800">
+                    <Calendar className="w-5 h-5 inline-block text-green-600 mr-2" />
+                    <span className="font-medium">{slot.time}</span>
+                  </div>
+
+                  <div className="mt-1 text-sm text-gray-600">
+                    <span>{slot.day} {slot.date}</span>
+                  </div>
+
+                  <div className="mt-2 text-sm">
+                    <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                      Available
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 
   const renderServices = () => (
     <div className="relative bg-white rounded-lg shadow-lg p-6 min-h-[300px]">
@@ -1832,373 +1784,171 @@ useEffect(() => {
 
     // fixed top bar
     <div className="min-h-screen bg-gray-100">
-  {/* Navbar - Fixed at the top */}
-  <nav className="bg-white shadow-lg fixed top-0 left-0 right-0 z-10">
-    <div className="max-w-7xl mx-auto px-4">
-      <div className="flex justify-between h-16">
-        <div className="flex items-center">
-          <Layout className="w-8 h-8 text-blue-600" />
-          <span className="ml-2 text-xl font-semibold">Workshop Dashboard</span>
-        </div>
-        <div className="flex items-center space-x-4">
-          {/* Workshop Profile */}
-          <div
-            className="flex items-center space-x-2 cursor-pointer"
-            onClick={() => navigate('/workshop-profile', { state: { fromDashboard: true } })}
-          >
-            <img
-              src="./assets/images/team/bilal.jpg"
-              alt="Admin"
-              className="w-8 h-8 rounded-full"
-            />
-            <span className="text-sm font-medium">{fullName}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  {/* Main container with padding-top to account for fixed navbar */}
-  <div className="pt-16">
-    {/* Sidebar and Main Content */}
-    <div className="flex">
-      {/* Sidebar - Fixed */}
-      <div className="w-64 bg-white h-screen shadow-lg fixed left-0 top-16 overflow-y-auto">
-        <div className="p-4">
-          <div className="space-y-2">
-            {[
-              { key: 'overview', icon: LayoutGrid, label: 'Overview' },
-              { key: 'bookings', icon: Calendar, label: 'Bookings' },
-              { key: 'customers', icon: Users, label: 'Customers' },
-              { key: 'services', icon: Wrench, label: 'Services' },
-              { key: 'analytics', icon: BarChart, label: 'Analytics' },
-              { key: 'settings', icon: Settings, label: 'Settings' },
-            ].map(({ key, icon: Icon, label }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`w-full flex items-center space-x-2 p-2 rounded-lg ${
-                  activeTab === key
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
+      {/* Navbar - Fixed at the top */}
+      <nav className="bg-white shadow-lg fixed top-0 left-0 right-0 z-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Layout className="w-8 h-8 text-blue-600" />
+              <span className="ml-2 text-xl font-semibold">Workshop Dashboard</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              {/* Workshop Profile */}
+              <div
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={() => navigate('/workshop-profile', { state: { fromDashboard: true } })}
               >
-                <Icon className="w-5 h-5" />
-                <span>{label}</span>
-              </button>
-            ))}
+                <img
+                  src="./assets/images/team/bilal.jpg"
+                  alt="Admin"
+                  className="w-8 h-8 rounded-full"
+                />
+                <span className="text-sm font-medium">{fullName}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main container with padding-top to account for fixed navbar */}
+      <div className="pt-16">
+        {/* Sidebar and Main Content */}
+        <div className="flex">
+          {/* Sidebar - Fixed */}
+          <div className="w-64 bg-white h-screen shadow-lg fixed left-0 top-16 overflow-y-auto">
+            <div className="p-4">
+              <div className="space-y-2">
+                {[
+                  { key: 'overview', icon: LayoutGrid, label: 'Overview' },
+                  { key: 'bookings', icon: Calendar, label: 'Bookings' },
+                  { key: 'customers', icon: Users, label: 'Customers' },
+                  { key: 'services', icon: Wrench, label: 'Services' },
+                  { key: 'analytics', icon: BarChart, label: 'Analytics' },
+                  { key: 'settings', icon: Settings, label: 'Settings' },
+                ].map(({ key, icon: Icon, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(key)}
+                    className={`w-full flex items-center space-x-2 p-2 rounded-lg ${activeTab === key
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content - Margin left to account for sidebar */}
+          <div className="flex-1 ml-64 p-8">
+            <div className="max-w-7xl mx-auto">
+              {activeTab === 'overview' && (
+                <>
+                  {renderOverview()}
+                  {renderBookings()}
+                </>
+              )}
+              {activeTab === 'bookings' && (
+                <>
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-xl font-semibold mb-4">All Bookings</h2>
+                    {bookings.length === 0 ? (
+                      <p className="text-gray-600">No pending emergency bookings found.</p>
+                    ) : (
+                      <ul className="space-y-4">
+                        {bookings.map((booking, index) => (
+                          <li key={index} className="border rounded-lg p-4 bg-gray-50">
+                            <p><strong>User:</strong> {booking.userName}</p>
+                            <p><strong>Problem:</strong> {booking.problem}</p>
+                            <p><strong>Address:</strong> {booking.address}</p>
+                            <button
+                              className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 active:bg-green-800 transition"
+                              onClick={() => handleAcceptRequest(booking)}
+                            >
+                              Accept Request
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+                    <h2 className="text-xl font-semibold mb-4">Your Booked Emergency Users</h2>
+                    {loading ? (
+                      <p className="text-gray-500">Loading confirmed bookings...</p>
+                    ) : confirmedEmergencies.length === 0 ? (
+                      <p className="text-gray-500">No confirmed bookings yet.</p>
+                    ) : (
+                      <ul className="space-y-4">
+                        {confirmedEmergencies.map((user, index) => (
+                          <li
+                            key={index}
+                            className="border rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-colors"
+                          >
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <p>
+                                <strong className="text-green-700">Email:</strong>{' '}
+                                <span className="text-gray-800">{user.userEmail}</span>
+                              </p>
+                              <p>
+                                <strong className="text-green-700">Name:</strong>{' '}
+                                <span className="text-gray-800">{user.userName}</span>
+                              </p>
+                              <p>
+                                <strong className="text-green-700">Phone:</strong>{' '}
+                                <span className="text-gray-800">{user.userPhone}</span>
+                              </p>
+                              <p className="md:col-span-2">
+                                <strong className="text-green-700">Address:</strong>{' '}
+                                <span className="text-gray-800">{user.address}</span>
+                              </p>
+                              <p className="md:col-span-2">
+                                <strong className="text-green-700">User ID:</strong>{' '}
+                                <span className="text-gray-800">{user.userId}</span>
+                              </p>
+                            </div>
+
+                            <div className="mt-3 flex justify-between items-center gap-3 flex-wrap">
+                              <div className="text-xs text-gray-500">
+                                Status:{' '}
+                                <span className="text-green-600 font-medium">Confirmed</span>
+                              </div>
+
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => navigate(`/view-location/${user.userId}`)}
+                                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  View Location
+                                </button>
+
+                                <button
+                                  onClick={() => handleCompleteRequest(user, index)}
+                                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  Mark as Completed
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {renderTimeSlots()}
+                </>
+              )}
+              {activeTab === 'services' && renderServices()}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Main Content - Margin left to account for sidebar */}
-      <div className="flex-1 ml-64 p-8">
-        <div className="max-w-7xl mx-auto">
-          {activeTab === 'overview' && (
-            <>
-              {renderOverview()}
-              {renderBookings()}
-            </>
-          )}
-          {activeTab === 'bookings' && (
-            <>
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-semibold mb-4">All Bookings</h2>
-                {bookings.length === 0 ? (
-                  <p className="text-gray-600">No pending emergency bookings found.</p>
-                ) : (
-                  <ul className="space-y-4">
-                    {bookings.map((booking, index) => (
-                      <li key={index} className="border rounded-lg p-4 bg-gray-50">
-                        <p><strong>User:</strong> {booking.userName}</p>
-                        <p><strong>Problem:</strong> {booking.problem}</p>
-                        <p><strong>Address:</strong> {booking.address}</p>
-                        <button
-                          className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 active:bg-green-800 transition"
-                          onClick={() => handleAcceptRequest(booking)}
-                        >
-                          Accept Request
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-                <h2 className="text-xl font-semibold mb-4">Your Booked Emergency Users</h2>
-                {loading ? (
-                  <p className="text-gray-500">Loading confirmed bookings...</p>
-                ) : confirmedEmergencies.length === 0 ? (
-                  <p className="text-gray-500">No confirmed bookings yet.</p>
-                ) : (
-                  <ul className="space-y-4">
-                    {confirmedEmergencies.map((user, index) => (
-                      <li
-                        key={index}
-                        className="border rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-colors"
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          <p>
-                            <strong className="text-green-700">Email:</strong>{' '}
-                            <span className="text-gray-800">{user.userEmail}</span>
-                          </p>
-                          <p>
-                            <strong className="text-green-700">Name:</strong>{' '}
-                            <span className="text-gray-800">{user.userName}</span>
-                          </p>
-                          <p>
-                            <strong className="text-green-700">Phone:</strong>{' '}
-                            <span className="text-gray-800">{user.userPhone}</span>
-                          </p>
-                          <p className="md:col-span-2">
-                            <strong className="text-green-700">Address:</strong>{' '}
-                            <span className="text-gray-800">{user.address}</span>
-                          </p>
-                          <p className="md:col-span-2">
-                            <strong className="text-green-700">User ID:</strong>{' '}
-                            <span className="text-gray-800">{user.userId}</span>
-                          </p>
-                        </div>
-
-                        <div className="mt-3 flex justify-between items-center gap-3 flex-wrap">
-                          <div className="text-xs text-gray-500">
-                            Status:{' '}
-                            <span className="text-green-600 font-medium">Confirmed</span>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => navigate(`/view-location/${user.userId}`)}
-                              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                              View Location
-                            </button>
-
-                            <button
-                              onClick={() => handleCompleteRequest(user, index)}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                              Mark as Completed
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {renderTimeSlots()}
-            </>
-          )}
-          {activeTab === 'services' && renderServices()}
-        </div>
-      </div>
     </div>
-  </div>
-</div>
-
-    // <div className="min-h-screen bg-gray-100">
-    //   {/* Navbar - Fixed at the top */}
-    //   <nav className="bg-white shadow-lg fixed top-0 left-0 right-0 z-10">
-    //     <div className="max-w-7xl mx-auto px-4">
-    //       <div className="flex justify-between h-16">
-    //         <div className="flex items-center">
-    //           <Layout className="w-8 h-8 text-blue-600" />
-    //           <span className="ml-2 text-xl font-semibold">Workshop Dashboard</span>
-    //         </div>
-    //         <div className="flex items-center space-x-4">
-    //           <div className="relative">
-    //             <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 text-gray-600 hover:text-blue-600 relative">
-    //               <Bell className="w-6 h-6" />
-    //               <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-    //                 {dashboardData.notifications.length}
-    //               </span>
-    //             </button>
-    //             {showNotifications && (
-    //               <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50">
-    //                 <div className="p-4">
-    //                   <h3 className="text-lg font-semibold mb-2">Notifications</h3>
-    //                   <div className="space-y-3">
-    //                     {dashboardData.notifications.map((notification) => (
-    //                       <div key={notification.id} className="flex items-start p-2 hover:bg-gray-50 rounded">
-    //                         <div className="ml-2">
-    //                           <p className="text-sm text-gray-800">{notification.message}</p>
-    //                           <p className="text-xs text-gray-500">{notification.time}</p>
-    //                         </div>
-    //                       </div>
-    //                     ))}
-    //                   </div>
-    //                 </div>
-    //               </div>
-    //             )}
-    //           </div>
-    //           {/* Workshop Profile */}
-    //           <div
-    //             className="flex items-center space-x-2 cursor-pointer"
-    //             onClick={() => navigate('/workshop-profile', { state: { fromDashboard: true } })}
-
-    //           >
-    //             <img
-    //               src="./assets/images/team/bilal.jpg"
-    //               alt="Admin"
-    //               className="w-8 h-8 rounded-full"
-    //             />
-    //             <span className="text-sm font-medium">{fullName}</span>
-    //           </div>
-
-    //         </div>
-    //       </div>
-    //     </div>
-    //   </nav>
-
-    //   {/* Main container with padding-top to account for fixed navbar */}
-    //   <div className="pt-16">
-    //     {/* Sidebar and Main Content */}
-    //     <div className="flex">
-    //       {/* Sidebar - Fixed */}
-    //       <div className="w-64 bg-white h-screen shadow-lg fixed left-0 top-16 overflow-y-auto">
-    //         <div className="p-4">
-    //           <div className="space-y-2">
-    //             {[
-    //               { key: 'overview', icon: LayoutGrid, label: 'Overview' },
-    //               { key: 'bookings', icon: Calendar, label: 'Bookings' },
-    //               { key: 'customers', icon: Users, label: 'Customers' },
-    //               { key: 'services', icon: Wrench, label: 'Services' },
-    //               { key: 'analytics', icon: BarChart, label: 'Analytics' },
-    //               { key: 'settings', icon: Settings, label: 'Settings' },
-    //             ].map(({ key, icon: Icon, label }) => (
-    //               <button
-    //                 key={key}
-    //                 onClick={() => setActiveTab(key)}
-    //                 className={`w-full flex items-center space-x-2 p-2 rounded-lg ${activeTab === key ? 'bg-blue-50 text-blue-600' : 'text-gray-600  hover:bg-gray-50'
-    //                   }`}
-    //               >
-    //                 <Icon className="w-5 h-5" />
-    //                 <span>{label}</span>
-    //               </button>
-    //             ))}
-    //           </div>
-    //           {/* <div className='bg-red-600 rounded-md m-10'>
-    //             <button className="text-black py-2 font-bold" onClick={handleLogout}>
-    //               Log Out
-    //             </button>
-    //           </div> */}
-    //         </div>
-    //       </div>
-
-    //       {/* Main Content - Margin left to account for sidebar */}
-    //       <div className="flex-1 ml-64 p-8">
-    //         <div className="max-w-7xl mx-auto">
-    //           {activeTab === 'overview' && (
-    //             <>
-    //               {renderOverview()}
-    //               {renderBookings()}
-    //             </>
-    //           )}
-    //           {activeTab === 'bookings' && (
-    //             <>
-    //               <div className="bg-white rounded-lg shadow-lg p-6">
-    //                 <h2 className="text-xl font-semibold mb-4">All Bookings</h2>
-
-    //                 {bookings.length === 0 ? (
-    //                   <p className="text-gray-600">No pending emergency bookings found.</p>
-    //                 ) : (
-    //                   <ul className="space-y-4">
-    //                     {bookings.map((booking, index) => (
-    //                       <li key={index} className="border rounded-lg p-4 bg-gray-50">
-    //                         <p><strong>User:</strong> {booking.userName}</p>
-    //                         <p><strong>Problem:</strong> {booking.problem}</p>
-    //                         <p><strong>Address:</strong> {booking.address}</p>
-
-    //                         {/* Accept Button */}
-    //                         <button
-    //                           className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 active:bg-green-800 transition"
-    //                           onClick={() => handleAcceptRequest(booking)}
-    //                         >
-    //                           Accept Request
-    //                         </button>
-    //                       </li>
-    //                     ))}
-    //                   </ul>
-    //                 )}
-    //                 {/* Bookings content goes here */}
-    //               </div>
-
-    //               <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-    //                 <h2 className="text-xl font-semibold mb-4">Your Booked Emergency Users</h2>
-    //                 {loading ? (
-    //                   <p className="text-gray-500">Loading confirmed bookings...</p>
-    //                 ) : confirmedEmergencies.length === 0 ? (
-    //                   <p className="text-gray-500">No confirmed bookings yet.</p>
-    //                 ) : (
-    //                   <ul className="space-y-4">
-    //                     {confirmedEmergencies.map((user, index) => (
-    //                       <li
-    //                         key={index}
-    //                         className="border rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-colors"
-    //                       >
-    //                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-    //                           <p>
-    //                             <strong className="text-green-700">Email:</strong>{' '}
-    //                             <span className="text-gray-800">{user.userEmail}</span>
-    //                           </p>
-    //                           <p>
-    //                             <strong className="text-green-700">Name:</strong>{' '}
-    //                             <span className="text-gray-800">{user.userName}</span>
-    //                           </p>
-    //                           <p>
-    //                             <strong className="text-green-700">Phone:</strong>{' '}
-    //                             <span className="text-gray-800">{user.userPhone}</span>
-    //                           </p>
-    //                           <p className="md:col-span-2">
-    //                             <strong className="text-green-700">Address:</strong>{' '}
-    //                             <span className="text-gray-800">{user.address}</span>
-    //                           </p>
-    //                           <p className="md:col-span-2">
-    //                             <strong className="text-green-700">User ID:</strong>{' '}
-    //                             <span className="text-gray-800">{user.userId}</span>
-    //                           </p>
-    //                         </div>
-
-    //                         <div className="mt-3 flex justify-between items-center gap-3 flex-wrap">
-    //                           <div className="text-xs text-gray-500">
-    //                             Status:{' '}
-    //                             <span className="text-green-600 font-medium">Confirmed</span>
-    //                           </div>
-
-    //                           <div className="flex gap-2">
-    //                             <button
-    //                               onClick={() => navigate(`/view-location/${user.userId}`)}
-    //                               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-    //                             >
-    //                               View Location
-    //                             </button>
-
-    //                             <button
-    //                               onClick={() => handleCompleteRequest(user, index)}
-    //                               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-    //                             >
-    //                               Mark as Completed
-    //                             </button>
-    //                           </div>
-    //                         </div>
-    //                       </li>
-    //                     ))}
-    //                   </ul>
-    //                 )}
-    //               </div>
-
-    //               {renderTimeSlots()}
-    //             </>
-    //           )}
-    //           {activeTab === 'services' && renderServices()}
-    //         </div>
-    //       </div>
-    //     </div>
-    //   </div>
-    // </div>
   );
   window.removeEventListener('popstate', handlePopState);
 };

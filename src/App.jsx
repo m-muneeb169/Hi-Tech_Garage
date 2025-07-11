@@ -7,7 +7,7 @@ import Home from "./pages/home.jsx";
 import Team from "./pages/team.jsx";
 import AtHomeRepair from "./services/AtHomeRepair.jsx";
 import PeriodicServicing from "./services/PeriodicServicing.jsx";
-import GoToTop from "./components/GoToTop.jsx";
+//import GoToTop from "./components/GoToTop.jsx";
 import { ThemeProvider } from "styled-components";
 import Booking from "./pages/booking.jsx";
 import OnSite from "./booking/OnSite.jsx";
@@ -73,12 +73,6 @@ function App() {
             <Route path="/onsite" element={<OnSite />} />
             <Route path="/workshopRepair" element={<WorkshopRepair />} />
 
-            {/* Remove duplicate routes */}
-            {/* <Route path="/bookings" element={<Booking />} /> */}
-            {/* <Route path="/bookings/onSite" element={<OnSite />} /> */}
-            {/* <Route path="/bookings/workshopRepair" element={<WorkshopRepair />} /> */}
-            {/* <Route path="/onSite" element={<OnSite />} /> */}
-
             <Route path="/RoadsideAssistance" element={<RoadsideAssistance />} />
             <Route path="/AtHomeRepair" element={<AtHomeRepair />} />
             <Route path="/PeriodicServicing" element={<PeriodicServicing />} />
@@ -122,7 +116,7 @@ function App() {
             <Route path="/aslam-dashboard" element={<AslamDashboard />} />
           </Routes>
           {/* Pass showChat as prop to GoToTop */}
-          <GoToTop hide={showChat} /> 
+          {/* <GoToTop hide={showChat} />  */}
 
           {/* Pass both showChat and setter to Chatbot */}
           <Chatbot showChat={showChat} setShowChat={setShowChat} />
