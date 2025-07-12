@@ -61,64 +61,62 @@ const RoadsideAssistance = () => {
       </Link>
 
       {/* Hero Section */}
-      <section className="relative h-[60vh] bg-gradient-to-r from-blue-900 to-black flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            transition={{ duration: 0.8 }}
-            className="max-w-2xl text-center px-4"
-          >
-            <h1 className="text-5xl font-bold text-white mb-6 font-['Barlow']">
-              24/7 Roadside Assistance
-            </h1>
-            <p className="text-xl text-white mb-8 italic">
-              Your reliable partner when the unexpected happens. Professional assistance anywhere, anytime.
-            </p>
-            <motion.button
-                          onClick={goToLogin}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                          transition={{ type: 'spring', stiffness: 400 }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-['Barlow'] font-semibold tracking-wide"
-                        >
-                          Get Help Now
-                        </motion.button>
-          </motion.div>
-        </div>
-      </section>
+<section className="relative h-screen bg-white text-blue-900 flex items-center justify-center overflow-hidden">
+  <div className="absolute inset-0 bg-gradient-to-r from-blue-800 via-blue-900 to-black opacity-90 z-0" />
+  <div className="absolute inset-0 z-10 flex items-center justify-center">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={fadeUp}
+      transition={{ duration: 0.8 }}
+      className="max-w-4xl text-center px-6 z-10"
+    >
+      <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 font-['Barlow'] leading-tight">
+        Long – Journey <br className="hidden md:block" />
+        <span className="text-blue-300">experience</span> with short <br className="hidden md:block" />
+        commute <span className="text-blue-300">convenience.</span>
+      </h1>
+      <p className="text-white text-base md:text-lg max-w-2xl mx-auto mb-10 italic">
+        There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised.
+      </p>
+      <motion.button
+        onClick={goToLogin}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 400 }}
+        className="bg-white text-blue-900 px-8 py-3 rounded-full font-semibold font-['Barlow'] tracking-wide hover:bg-blue-100 shadow-lg"
+      >
+        Find Car
+      </motion.button>
+    </motion.div>
+  </div>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={staggerContainer}
-          className="container mx-auto px-4"
-        >
-          <motion.h2
-            variants={fadeUp}
-            className="text-3xl font-bold text-center mb-16 text-blue-900 font-['Barlow']"
-          >
-            Why Choose Our Roadside Assistance
-          </motion.h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[{ icon: <Clock className="w-12 h-12 text-blue-600" />, title: "24/7 Availability", description: "Round-the-clock emergency support whenever you need us" }, { icon: <MapPin className="w-12 h-12 text-blue-600" />, title: "Quick Response", description: "Fast arrival times with real-time tracking" }, { icon: <Shield className="w-12 h-12 text-blue-600" />, title: "Certified Mechanics", description: "Expert technicians for all vehicle types" }].map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={fadeUp}
-                className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300"
-              >
-                <div className="mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2 font-['Barlow']">{feature.title}</h3>
-                <p className="text-gray-600 italic">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+  {/* Background Car Image */}
+  <div className="absolute bottom-0 right-0 z-0 w-[50%] md:w-[40%] opacity-90">
+    <img
+      src="C:\Users\LapTop\OneDrive - Higher Education Commission\Documents\GitHub\Hi-Tech_Garage\public\assets\images\whitecar.png" // 🔁 Replace with your own car image path or URL
+      alt="Car"
+      className="object-contain w-full h-auto"
+    />
+  </div>
+
+  {/* Arrow Decorations */}
+  <div className="absolute top-10 left-10 z-20">
+    <img
+      src="/arrow-top-left.png" // 🔁 Custom decorative arrow image (optional)
+      alt=""
+      className="w-24 opacity-80"
+    />
+  </div>
+  <div className="absolute top-[35%] right-[10%] z-20">
+    <img
+      src="/arrow-right.png" // 🔁 Custom decorative arrow image (optional)
+      alt=""
+      className="w-24 opacity-80"
+    />
+  </div>
+</section>
+
 
       {/* Services Overview */}
       <section className="py-20 bg-white">
