@@ -291,254 +291,1009 @@ const AslamDashboard = () => {
 
 
   useEffect(() => {
-    const unsubscribers = [];
-    let activeOrderIds = new Set();
-    let completedOrderIds = new Set();
-    let pendingOrderIds = new Set();
-    let totalEarningsSoFar = 0;
+  const unsubscribers = [];
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const workshopId = user.uid;
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const initialBookings = [];
-        const initialCompletedOrders = [];
+  const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const workshopId = user.uid;
+      const workshopRef = doc(db, 'workshops', workshopId);
 
-        // Reset counts
-        activeOrderIds.clear();
-        completedOrderIds.clear();
-        pendingOrderIds.clear();
-        totalEarningsSoFar = 0;
+      const unsubscribeWorkshop = onSnapshot(workshopRef, async (docSnap) => {
+        if (docSnap.exists()) {
+          const workshopData = docSnap.data();
+          const orders = workshopData.orders || [];
 
-        // Get workshop's current orders to check status
-        const workshopRef = doc(db, 'workshops', workshopId);
-        const workshopDoc = await getDoc(workshopRef);
-        const workshopOrders = workshopDoc.exists() ? workshopDoc.data().orders || [] : [];
+          let pendingCount = 0;
+          let activeCount = 0;
+          let completedCount = 0;
+          let totalEarnings = 0;
 
-        for (const userDoc of usersSnapshot.docs) {
-          const userData = userDoc.data();
-          const orders = userData.orders || [];
+          const recentBookings = [];
+          const completedBookings = [];
 
-          for (let index = 0; index < orders.length; index++) {
-            const order = orders[index];
-            const selectedWorkshop = order.userselectedworkshop;
+          // ✅ Sort orders by createdAt descending (latest first)
+          const sortedOrders = [...orders].sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0);
+            const dateB = new Date(b.createdAt || 0);
+            return dateB - dateA;
+          });
 
-            if (selectedWorkshop && selectedWorkshop.id === workshopId) {
-              // Check if this order exists in workshop's orders array
-              const matchingWorkshopOrder = workshopOrders.find(
-                (wOrder) =>
-                  wOrder.userId === userDoc.id &&
-                  wOrder.orderId === order.orderId
-              );
+          for (const order of sortedOrders) {
+            const status = order.workshoporderstatus || 'pending';
 
-              let orderStatus = 'pending'; // Default status for new orders
-              let completedDate = null;
+            // Skip orders that are not for this workshop (extra safety)
+            if (order.workshopId && order.workshopId !== workshopId) continue;
 
-              if (matchingWorkshopOrder && matchingWorkshopOrder.workshoporderstatus) {
-                orderStatus = matchingWorkshopOrder.workshoporderstatus;
-                completedDate = matchingWorkshopOrder.completedDate || null;
+            // Fetch user data
+            let userData = null;
+            let userOrder = null;
+
+            try {
+              const userDoc = await getDoc(doc(db, 'users', order.userId));
+              if (userDoc.exists()) {
+                userData = userDoc.data();
+                userOrder = userData.orders?.find(o => o.orderId === order.orderId);
               }
+            } catch (error) {
+              console.error('Error fetching user data:', error);
+            }
 
-              const bookingObj = {
-                id: userDoc.id,
-                customerName: userData.fullName || 'Unknown',
-                service: Array.isArray(order.userselectedservices)
-                  ? order.userselectedservices
-                    .map(service => `${service.name} - ${service.price} PKR`)
-                    .join(', ')
-                  : 'No Services Selected',
-                typeOrder: order.typeOrder || 'N/A',
-                status: orderStatus,
-                orderIndex: index,
-                workshopId: selectedWorkshop.id,
-                orderId: order.orderId,
-                completedDate: completedDate,
-                earnings: orderStatus === 'completed' ?
-                  (Array.isArray(order.userselectedservices) ?
-                    order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0) : 0
-              };
+            // Calculate earnings
+            let orderEarnings = 0;
+            if (userOrder?.userselectedservices?.length) {
+              orderEarnings = userOrder.userselectedservices.reduce((sum, service) => {
+                return sum + (parseFloat(service.price) || 0);
+              }, 0);
+            }
 
-              if (orderStatus === 'completed') {
-                initialCompletedOrders.push(bookingObj);
-              } else {
-                initialBookings.push(bookingObj);
-              }
+            const orderInfo = {
+              id: order.userId,
+              customerName: userData?.fullName || 'Unknown',
+              service: order.userselectedservices?.map(service => `${service.name} - ${service.price} PKR`).join(', ') || 'No Services Selected',
+typeOrder: order.typeOrder || 'N/A',
 
-              // Count orders based on their status
-              if (orderStatus === 'active') {
-                activeOrderIds.add(order.orderId);
-              } else if (orderStatus === 'completed') {
-                completedOrderIds.add(order.orderId);
-                // Calculate earnings for completed orders
-                if (Array.isArray(order.userselectedservices)) {
-                  order.userselectedservices.forEach(service => {
-                    totalEarningsSoFar += parseFloat(service.price) || 0;
-                  });
-                }
-              } else if (orderStatus === 'pending') {
-                pendingOrderIds.add(order.orderId);
-              }
+              // service: userOrder?.userselectedservices?.map(service => `${service.name} - ${service.price} PKR`).join(', ') || 'No Services Selected',
+              // typeOrder: userOrder?.typeOrder || 'N/A',
+              status: status,
+              orderId: order.orderId,
+              orderIndex: userData?.orders?.indexOf(userOrder) || 0,
+              completedDate: order.completedDate || null,
+              earnings: orderEarnings,
+              createdAt: order.createdAt || null
+            };
 
-              // Setup listener for this specific workshop
-              const unsubscribe = onSnapshot(workshopRef, (docSnap) => {
-                if (docSnap.exists()) {
-                  const workshopData = docSnap.data();
-                  const currentWorkshopOrders = workshopData.orders || [];
-
-                  const currentMatchingOrder = currentWorkshopOrders.find(
-                    (wOrder) =>
-                      wOrder.userId === userDoc.id &&
-                      wOrder.orderId === order.orderId
-                  );
-
-                  if (currentMatchingOrder && currentMatchingOrder.workshoporderstatus) {
-                    const newStatus = currentMatchingOrder.workshoporderstatus;
-                    const newCompletedDate = currentMatchingOrder.completedDate || null;
-
-                    // Update the booking status in state
-                    setDataDashboard(prev => {
-                      const updated = prev.recentBookings.map(b => {
-                        if (
-                          b.id === userDoc.id &&
-                          b.orderIndex === index &&
-                          b.workshopId === selectedWorkshop.id
-                        ) {
-                          return {
-                            ...b,
-                            status: newStatus,
-                            completedDate: newCompletedDate
-                          };
-                        }
-                        return b;
-                      });
-
-                      // If status changed to completed, move to completed orders
-                      if (newStatus === 'completed') {
-                        const completedOrder = updated.find(b =>
-                          b.id === userDoc.id &&
-                          b.orderIndex === index &&
-                          b.workshopId === selectedWorkshop.id
-                        );
-
-                        if (completedOrder) {
-                          // Calculate earnings for this completed order
-                          const earnings = Array.isArray(order.userselectedservices) ?
-                            order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0;
-
-                          completedOrder.earnings = earnings;
-                          completedOrder.completedDate = newCompletedDate;
-
-                          // Add to completed orders
-                          setCompletedOrders(prevCompleted => {
-                            const exists = prevCompleted.some(co =>
-                              co.id === completedOrder.id &&
-                              co.orderIndex === completedOrder.orderIndex &&
-                              co.workshopId === completedOrder.workshopId
-                            );
-
-                            if (!exists) {
-                              return [...prevCompleted, completedOrder];
-                            }
-                            return prevCompleted.map(co =>
-                              co.id === completedOrder.id &&
-                                co.orderIndex === completedOrder.orderIndex &&
-                                co.workshopId === completedOrder.workshopId
-                                ? completedOrder : co
-                            );
-                          });
-
-                          // Remove from recent bookings
-                          return {
-                            ...prev,
-                            recentBookings: updated.filter(b =>
-                              !(b.id === userDoc.id &&
-                                b.orderIndex === index &&
-                                b.workshopId === selectedWorkshop.id)
-                            )
-                          };
-                        }
-                      }
-
-                      return { ...prev, recentBookings: updated };
-                    });
-                  }
-
-                  // Recalculate counts based on current workshop orders
-                  const newActiveIds = new Set();
-                  const newCompletedIds = new Set();
-                  const newPendingIds = new Set();
-                  let newTotalEarnings = 0;
-
-                  // Get all orders for this workshop from users collection
-                  const allWorkshopOrders = [];
-                  [...initialBookings, ...initialCompletedOrders].forEach(booking => {
-                    const workshopOrder = currentWorkshopOrders.find(
-                      wo => wo.userId === booking.id && wo.orderId === booking.orderId
-                    );
-
-                    if (workshopOrder) {
-                      allWorkshopOrders.push(workshopOrder);
-                    } else {
-                      // If not in workshop orders, it's pending
-                      newPendingIds.add(booking.orderId);
-                    }
-                  });
-
-                  // Count based on workshop orders status
-                  allWorkshopOrders.forEach(order => {
-                    if (order.workshoporderstatus === 'active') {
-                      newActiveIds.add(order.orderId);
-                    } else if (order.workshoporderstatus === 'completed') {
-                      newCompletedIds.add(order.orderId);
-                      // Calculate earnings
-                      if (Array.isArray(order.userselectedservices)) {
-                        order.userselectedservices.forEach(service => {
-                          newTotalEarnings += parseFloat(service.price) || 0;
-                        });
-                      }
-                    } else if (order.workshoporderstatus === 'pending') {
-                      newPendingIds.add(order.orderId);
-                    }
-                  });
-
-                  setActiveCount(newActiveIds.size);
-                  setCompletedCount(newCompletedIds.size);
-                  setPendingCount(newPendingIds.size);
-                  setTotalEarnings(newTotalEarnings);
-                }
-              });
-
-              unsubscribers.push(unsubscribe);
+            if (status === 'pending' || status === 'active') {
+              recentBookings.push(orderInfo);
+              if (status === 'pending') pendingCount++;
+              if (status === 'active') activeCount++;
+            } else if (status === 'completed') {
+              completedBookings.push(orderInfo);
+              completedCount++;
+              totalEarnings += orderEarnings;
             }
           }
+
+          setPendingCount(pendingCount);
+          setActiveCount(activeCount);
+          setCompletedCount(completedCount);
+          setTotalEarnings(totalEarnings);
+          setDataDashboard(prev => ({ ...prev, recentBookings }));
+          setCompletedOrders(completedBookings);
+        } else {
+          // No such workshop document
+          setPendingCount(0);
+          setActiveCount(0);
+          setCompletedCount(0);
+          setTotalEarnings(0);
+          setDataDashboard({ recentBookings: [] });
+          setCompletedOrders([]);
         }
+      });
 
-        // Set initial counts and data
-        setActiveCount(activeOrderIds.size);
-        setCompletedCount(completedOrderIds.size);
-        setPendingCount(pendingOrderIds.size);
-        setTotalEarnings(totalEarningsSoFar);
-        setDataDashboard(prev => ({ ...prev, recentBookings: initialBookings }));
-        setCompletedOrders(initialCompletedOrders);
-
-      } else {
-        // User Logout — listeners close karo, data clear karo
-        unsubscribers.forEach(unsub => unsub());
-        setDataDashboard({ recentBookings: [] });
-        setCompletedOrders([]);
-        setActiveCount(0);
-        setCompletedCount(0);
-        setPendingCount(0);
-        setTotalEarnings(0);
-      }
-    });
-
-    return () => {
-      // Component unmount hone par bhi sab cleanup ho
+      unsubscribers.push(unsubscribeWorkshop);
+    } else {
+      // User logged out
       unsubscribers.forEach(unsub => unsub());
-      unsubscribeAuth();
-    };
-  }, []);
+      setPendingCount(0);
+      setActiveCount(0);
+      setCompletedCount(0);
+      setTotalEarnings(0);
+      setDataDashboard({ recentBookings: [] });
+      setCompletedOrders([]);
+    }
+  });
+
+  unsubscribers.push(unsubscribeAuth);
+
+  return () => {
+    unsubscribers.forEach(unsub => unsub());
+  };
+}, []);
+
+
+//   useEffect(() => {
+//   const unsubscribers = [];
+
+//   const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//       const workshopId = user.uid;
+//       const workshopRef = doc(db, 'workshops', workshopId);
+
+//       const unsubscribeWorkshop = onSnapshot(workshopRef, async (docSnap) => {
+//         if (docSnap.exists()) {
+//           const workshopData = docSnap.data();
+//           const orders = workshopData.orders || [];
+
+//           let pendingCount = 0;
+//           let activeCount = 0;
+//           let completedCount = 0;
+//           let totalEarnings = 0;
+
+//           const recentBookings = [];
+//           const completedBookings = [];
+
+//           for (const order of orders) {
+//             const status = order.workshoporderstatus || 'pending';
+
+//             // Skip orders that are not for this workshop (extra safety)
+//             if (order.workshopId && order.workshopId !== workshopId) continue;
+
+//             // Fetch user data
+//             let userData = null;
+//             let userOrder = null;
+
+//             try {
+//               const userDoc = await getDoc(doc(db, 'users', order.userId));
+//               if (userDoc.exists()) {
+//                 userData = userDoc.data();
+//                 userOrder = userData.orders?.find(o => o.orderId === order.orderId);
+//               }
+//             } catch (error) {
+//               console.error('Error fetching user data:', error);
+//             }
+
+//             // Calculate earnings
+//             let orderEarnings = 0;
+//             if (userOrder?.userselectedservices?.length) {
+//               orderEarnings = userOrder.userselectedservices.reduce((sum, service) => {
+//                 return sum + (parseFloat(service.price) || 0);
+//               }, 0);
+//             }
+
+//             const orderInfo = {
+//               id: order.userId,
+//               customerName: userData?.fullName || 'Unknown',
+//               service: userOrder?.userselectedservices?.map(service => `${service.name} - ${service.price} PKR`).join(', ') || 'No Services Selected',
+//               typeOrder: userOrder?.typeOrder || 'N/A',
+//               status: status,
+//               orderId: order.orderId,
+//               orderIndex: userData?.orders?.indexOf(userOrder) || 0,
+//               completedDate: order.completedDate || null,
+//               earnings: orderEarnings
+//             };
+
+//             if (status === 'pending' || status === 'active') {
+//               recentBookings.push(orderInfo);
+//               if (status === 'pending') pendingCount++;
+//               if (status === 'active') activeCount++;
+//             } else if (status === 'completed') {
+//               completedBookings.push(orderInfo);
+//               completedCount++;
+//               totalEarnings += orderEarnings;
+//             }
+//           }
+
+//           // ✅ Sort recentBookings by latest first
+//           recentBookings.sort((a, b) => b.orderIndex - a.orderIndex);
+
+//           // Set state
+//           setPendingCount(pendingCount);
+//           setActiveCount(activeCount);
+//           setCompletedCount(completedCount);
+//           setTotalEarnings(totalEarnings);
+//           setDataDashboard(prev => ({ ...prev, recentBookings }));
+//           setCompletedOrders(completedBookings);
+//         } else {
+//           // No such workshop document
+//           setPendingCount(0);
+//           setActiveCount(0);
+//           setCompletedCount(0);
+//           setTotalEarnings(0);
+//           setDataDashboard({ recentBookings: [] });
+//           setCompletedOrders([]);
+//         }
+//       });
+
+//       unsubscribers.push(unsubscribeWorkshop);
+//     } else {
+//       // User logged out
+//       unsubscribers.forEach(unsub => unsub());
+//       setPendingCount(0);
+//       setActiveCount(0);
+//       setCompletedCount(0);
+//       setTotalEarnings(0);
+//       setDataDashboard({ recentBookings: [] });
+//       setCompletedOrders([]);
+//     }
+//   });
+
+//   unsubscribers.push(unsubscribeAuth);
+
+//   return () => {
+//     unsubscribers.forEach(unsub => unsub());
+//   };
+// }, []);
+
+// useEffect(() => {
+//   const unsubscribers = [];
+
+//   const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//       const workshopsRef = collection(db, 'workshops');
+
+//       const unsubscribeAllWorkshops = onSnapshot(workshopsRef, async (snapshot) => {
+//         let pendingCount = 0;
+//         let activeCount = 0;
+//         let completedCount = 0;
+//         let totalEarnings = 0;
+
+//         const recentBookings = [];
+//         const completedBookings = [];
+
+//         for (const docSnap of snapshot.docs) {
+//           const workshopData = docSnap.data();
+//           const workshopId = docSnap.id;
+//           const orders = workshopData.orders || [];
+
+//           for (const order of orders) {
+//             const status = order.workshoporderstatus || 'pending';
+
+//             // Fetch user data
+//             let userData = null;
+//             let userOrder = null;
+
+//             try {
+//               const userDoc = await getDoc(doc(db, 'users', order.userId));
+//               if (userDoc.exists()) {
+//                 userData = userDoc.data();
+//                 userOrder = userData.orders?.find(o => o.orderId === order.orderId);
+//               }
+//             } catch (error) {
+//               console.error('Error fetching user data:', error);
+//             }
+
+//             // Calculate earnings
+//             let orderEarnings = 0;
+//             if (userOrder?.userselectedservices?.length) {
+//               orderEarnings = userOrder.userselectedservices.reduce((sum, service) => {
+//                 return sum + (parseFloat(service.price) || 0);
+//               }, 0);
+//             }
+
+//             const orderInfo = {
+//               id: order.userId,
+//               customerName: userData?.fullName || 'Unknown',
+//               service: userOrder?.userselectedservices?.map(service => `${service.name} - ${service.price} PKR`).join(', ') || 'No Services Selected',
+//               typeOrder: userOrder?.typeOrder || 'N/A',
+//               status: status,
+//               orderId: order.orderId,
+//               orderIndex: userData?.orders?.indexOf(userOrder) || 0,
+//               completedDate: order.completedDate || null,
+//               earnings: orderEarnings,
+//               workshopId,
+//               workshopName: workshopData?.fullName || 'Unnamed Workshop'
+//             };
+
+//             if (status === 'pending' || status === 'active') {
+//               recentBookings.push(orderInfo);
+//               if (status === 'pending') pendingCount++;
+//               if (status === 'active') activeCount++;
+//             } else if (status === 'completed') {
+//               completedBookings.push(orderInfo);
+//               completedCount++;
+//               totalEarnings += orderEarnings;
+//             }
+//           }
+//         }
+
+//         setPendingCount(pendingCount);
+//         setActiveCount(activeCount);
+//         setCompletedCount(completedCount);
+//         setTotalEarnings(totalEarnings);
+//         setDataDashboard(prev => ({ ...prev, recentBookings }));
+//         setCompletedOrders(completedBookings);
+//       });
+
+//       unsubscribers.push(unsubscribeAllWorkshops);
+//     } else {
+//       // Logged out: clean up
+//       unsubscribers.forEach(unsub => unsub());
+//       setPendingCount(0);
+//       setActiveCount(0);
+//       setCompletedCount(0);
+//       setTotalEarnings(0);
+//       setDataDashboard({ recentBookings: [] });
+//       setCompletedOrders([]);
+//     }
+//   });
+
+//   unsubscribers.push(unsubscribeAuth);
+
+//   return () => {
+//     unsubscribers.forEach(unsub => unsub());
+//   };
+// }, []);
+
+
+  // useEffect(() => {
+  // const unsubscribers = [];
+
+  // const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+  //   if (user) {
+  //     const workshopId = user.uid; // This is the currently logged-in workshop
+  //     const workshopRef = doc(db, 'workshops', workshopId); // Only this workshop's document
+      
+  //     console.log('Logged in workshop ID:', workshopId); // Debug log
+
+  //     // Listen to ONLY the currently logged-in workshop's document
+  //     const unsubscribeWorkshop = onSnapshot(workshopRef, async (docSnap) => {
+  //       if (docSnap.exists()) {
+  //         const workshopData = docSnap.data();
+  //         const orders = workshopData.orders || []; // Only orders for THIS workshop
+
+  //         let pendingCount = 0;
+  //         let activeCount = 0;
+  //         let completedCount = 0;
+  //         let totalEarnings = 0;
+  //         const recentBookings = [];
+  //         const completedBookings = [];
+
+  //         console.log(`Workshop ${workshopId} has ${orders.length} orders:`, orders); // Debug log
+
+  //         // Process each order - these are ALL orders for the logged-in workshop ONLY
+  //         for (const order of orders) {
+  //           const status = order.workshoporderstatus || 'pending'; // Default to pending if no status
+            
+  //           console.log(`Order ${order.orderId} for workshop ${workshopId} has status: ${status}`); // Debug log
+
+  //           // Verify this order belongs to the logged-in workshop
+  //           if (order.workshopId && order.workshopId !== workshopId) {
+  //             console.warn(`Order ${order.orderId} belongs to different workshop: ${order.workshopId}`);
+  //             continue; // Skip orders that don't belong to this workshop
+  //           }
+
+  //           // Get user data for this order
+  //           let userData = null;
+  //           let userOrder = null;
+            
+  //           try {
+  //             const userDoc = await getDoc(doc(db, 'users', order.userId));
+  //             if (userDoc.exists()) {
+  //               userData = userDoc.data();
+  //               userOrder = userData.orders?.find(o => o.orderId === order.orderId);
+  //             }
+  //           } catch (error) {
+  //             console.error('Error fetching user data:', error);
+  //           }
+
+  //           // Calculate earnings from user's order data (more reliable)
+  //           let orderEarnings = 0;
+  //           if (userOrder && Array.isArray(userOrder.userselectedservices)) {
+  //             orderEarnings = userOrder.userselectedservices.reduce((sum, service) => {
+  //               return sum + (parseFloat(service.price) || 0);
+  //             }, 0);
+  //           }
+
+  //           // Count based on status
+  //           if (status === 'pending') {
+  //             pendingCount++;
+  //             // Add to recent bookings if we have user data
+  //             if (userData && userOrder) {
+  //               recentBookings.push({
+  //                 id: order.userId,
+  //                 customerName: userData.fullName || 'Unknown',
+  //                 service: Array.isArray(userOrder.userselectedservices)
+  //                   ? userOrder.userselectedservices
+  //                       .map(service => `${service.name} - ${service.price} PKR`)
+  //                       .join(', ')
+  //                   : 'No Services Selected',
+  //                 typeOrder: userOrder.typeOrder || 'N/A',
+  //                 status: status,
+  //                 orderId: order.orderId,
+  //                 orderIndex: userData.orders.indexOf(userOrder)
+  //               });
+  //             }
+  //           } else if (status === 'active') {
+  //             activeCount++;
+  //             // Add to recent bookings if we have user data
+  //             if (userData && userOrder) {
+  //               recentBookings.push({
+  //                 id: order.userId,
+  //                 customerName: userData.fullName || 'Unknown',
+  //                 service: Array.isArray(userOrder.userselectedservices)
+  //                   ? userOrder.userselectedservices
+  //                       .map(service => `${service.name} - ${service.price} PKR`)
+  //                       .join(', ')
+  //                   : 'No Services Selected',
+  //                 typeOrder: userOrder.typeOrder || 'N/A',
+  //                 status: status,
+  //                 orderId: order.orderId,
+  //                 orderIndex: userData.orders.indexOf(userOrder)
+  //               });
+  //             }
+  //           } else if (status === 'completed') {
+  //             completedCount++;
+  //             totalEarnings += orderEarnings;
+              
+  //             // Add to completed bookings if we have user data
+  //             if (userData && userOrder) {
+  //               completedBookings.push({
+  //                 id: order.userId,
+  //                 customerName: userData.fullName || 'Unknown',
+  //                 service: Array.isArray(userOrder.userselectedservices)
+  //                   ? userOrder.userselectedservices
+  //                       .map(service => `${service.name} - ${service.price} PKR`)
+  //                       .join(', ')
+  //                   : 'No Services Selected',
+  //                 typeOrder: userOrder.typeOrder || 'N/A',
+  //                 status: status,
+  //                 orderId: order.orderId,
+  //                 completedDate: order.completedDate,
+  //                 earnings: orderEarnings
+  //               });
+  //             }
+  //           }
+  //         }
+
+  //         console.log(`Final counts for workshop ${workshopId}:`);
+  //         console.log(`- Pending: ${pendingCount}, Active: ${activeCount}, Completed: ${completedCount}, Earnings: ${totalEarnings}`); // Debug log
+
+  //         // Update state with calculated values
+  //         setPendingCount(pendingCount);
+  //         setActiveCount(activeCount);
+  //         setCompletedCount(completedCount);
+  //         setTotalEarnings(totalEarnings);
+  //         setDataDashboard(prev => ({ ...prev, recentBookings: recentBookings }));
+  //         setCompletedOrders(completedBookings);
+
+  //         // Optional: If you need to show recent bookings, fetch user details
+  //         // for orders with status 'pending' or 'active'
+  //         // fetchRecentBookings(orders.filter(order => 
+  //         //   order.workshoporderstatus === 'pending' || 
+  //         //   order.workshoporderstatus === 'active'
+  //         // ));
+          
+  //         // Optional: If you need to show completed orders
+  //         // fetchCompletedOrders(orders.filter(order => 
+  //         //   order.workshoporderstatus === 'completed'
+  //         // ));
+  //       } else {
+  //         // Workshop document doesn't exist, reset counts
+  //         setPendingCount(0);
+  //         setActiveCount(0);
+  //         setCompletedCount(0);
+  //         setTotalEarnings(0);
+  //       }
+  //     });
+
+  //     unsubscribers.push(unsubscribeWorkshop);
+  //   } else {
+  //     // User logged out, cleanup and reset
+  //     unsubscribers.forEach(unsub => unsub());
+  //     setPendingCount(0);
+  //     setActiveCount(0);
+  //     setCompletedCount(0);
+  //     setTotalEarnings(0);
+  //     setDataDashboard({ recentBookings: [] });
+  //     setCompletedOrders([]);
+  //   }
+  // });
+
+//   return () => {
+//     // Cleanup on component unmount
+//     unsubscribers.forEach(unsub => unsub());
+//     unsubscribeAuth();
+//   };
+// }, []);
+//   useEffect(() => {
+//   const unsubscribers = [];
+
+//   const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//       const workshopId = user.uid;
+//       const workshopRef = doc(db, 'workshops', workshopId);
+
+//       // Listen to workshop document changes for real-time updates
+//       const unsubscribeWorkshop = onSnapshot(workshopRef, async (docSnap) => {
+//         if (docSnap.exists()) {
+//           const workshopData = docSnap.data();
+//           const orders = workshopData.orders || [];
+
+//           let pendingCount = 0;
+//           let activeCount = 0;
+//           let completedCount = 0;
+//           let totalEarnings = 0;
+//           const recentBookings = [];
+//           const completedBookings = [];
+
+//           console.log('Workshop orders:', orders); // Debug log
+
+//           // Process each order in the workshop's orders array
+//           for (const order of orders) {
+//             const status = order.workshoporderstatus || 'pending'; // Default to pending if no status
+            
+//             console.log(`Order ${order.orderId} has status: ${status}`); // Debug log
+
+//             // Get user data for this order
+//             let userData = null;
+//             let userOrder = null;
+            
+//             try {
+//               const userDoc = await getDoc(doc(db, 'users', order.userId));
+//               if (userDoc.exists()) {
+//                 userData = userDoc.data();
+//                 userOrder = userData.orders?.find(o => o.orderId === order.orderId);
+//               }
+//             } catch (error) {
+//               console.error('Error fetching user data:', error);
+//             }
+
+//             // Calculate earnings from user's order data (more reliable)
+//             let orderEarnings = 0;
+//             if (userOrder && Array.isArray(userOrder.userselectedservices)) {
+//               orderEarnings = userOrder.userselectedservices.reduce((sum, service) => {
+//                 return sum + (parseFloat(service.price) || 0);
+//               }, 0);
+//             }
+
+//             // Count based on status
+//             if (status === 'pending') {
+//               pendingCount++;
+//               // Add to recent bookings if we have user data
+//               if (userData && userOrder) {
+//                 recentBookings.push({
+//                   id: order.userId,
+//                   customerName: userData.fullName || 'Unknown',
+//                   service: Array.isArray(userOrder.userselectedservices)
+//                     ? userOrder.userselectedservices
+//                         .map(service => `${service.name} - ${service.price} PKR`)
+//                         .join(', ')
+//                     : 'No Services Selected',
+//                   typeOrder: userOrder.typeOrder || 'N/A',
+//                   status: status,
+//                   orderId: order.orderId,
+//                   orderIndex: userData.orders.indexOf(userOrder)
+//                 });
+//               }
+//             } else if (status === 'active') {
+//               activeCount++;
+//               // Add to recent bookings if we have user data
+//               if (userData && userOrder) {
+//                 recentBookings.push({
+//                   id: order.userId,
+//                   customerName: userData.fullName || 'Unknown',
+//                   service: Array.isArray(userOrder.userselectedservices)
+//                     ? userOrder.userselectedservices
+//                         .map(service => `${service.name} - ${service.price} PKR`)
+//                         .join(', ')
+//                     : 'No Services Selected',
+//                   typeOrder: userOrder.typeOrder || 'N/A',
+//                   status: status,
+//                   orderId: order.orderId,
+//                   orderIndex: userData.orders.indexOf(userOrder)
+//                 });
+//               }
+//             } else if (status === 'completed') {
+//               completedCount++;
+//               totalEarnings += orderEarnings;
+              
+//               // Add to completed bookings if we have user data
+//               if (userData && userOrder) {
+//                 completedBookings.push({
+//                   id: order.userId,
+//                   customerName: userData.fullName || 'Unknown',
+//                   service: Array.isArray(userOrder.userselectedservices)
+//                     ? userOrder.userselectedservices
+//                         .map(service => `${service.name} - ${service.price} PKR`)
+//                         .join(', ')
+//                     : 'No Services Selected',
+//                   typeOrder: userOrder.typeOrder || 'N/A',
+//                   status: status,
+//                   orderId: order.orderId,
+//                   completedDate: order.completedDate,
+//                   earnings: orderEarnings
+//                 });
+//               }
+//             }
+//           }
+
+//           console.log(`Counts - Pending: ${pendingCount}, Active: ${activeCount}, Completed: ${completedCount}, Earnings: ${totalEarnings}`); // Debug log
+
+//           // Update state with calculated values
+//           setPendingCount(pendingCount);
+//           setActiveCount(activeCount);
+//           setCompletedCount(completedCount);
+//           setTotalEarnings(totalEarnings);
+//           setDataDashboard(prev => ({ ...prev, recentBookings: recentBookings }));
+//           setCompletedOrders(completedBookings);
+
+//           // Optional: If you need to show recent bookings, fetch user details
+//           // for orders with status 'pending' or 'active'
+//           // fetchRecentBookings(orders.filter(order => 
+//           //   order.workshoporderstatus === 'pending' || 
+//           //   order.workshoporderstatus === 'active'
+//           // ));
+          
+//           // Optional: If you need to show completed orders
+//           // fetchCompletedOrders(orders.filter(order => 
+//           //   order.workshoporderstatus === 'completed'
+//           // ));
+//         } else {
+//           // Workshop document doesn't exist, reset counts
+//           setPendingCount(0);
+//           setActiveCount(0);
+//           setCompletedCount(0);
+//           setTotalEarnings(0);
+//         }
+//       });
+
+//       unsubscribers.push(unsubscribeWorkshop);
+//     } else {
+//       // User logged out, cleanup and reset
+//       unsubscribers.forEach(unsub => unsub());
+//       setPendingCount(0);
+//       setActiveCount(0);
+//       setCompletedCount(0);
+//       setTotalEarnings(0);
+//       setDataDashboard({ recentBookings: [] });
+//       setCompletedOrders([]);
+//     }
+//   });
+
+//   return () => {
+//     // Cleanup on component unmount
+//     unsubscribers.forEach(unsub => unsub());
+//     unsubscribeAuth();
+//   };
+// }, []);
+
+
+//   useEffect(() => {
+//   const unsubscribers = [];
+
+//   const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//       const workshopId = user.uid;
+//       const workshopRef = doc(db, 'workshops', workshopId);
+
+//       // Listen to workshop document changes for real-time updates
+//       const unsubscribeWorkshop = onSnapshot(workshopRef, (docSnap) => {
+//         if (docSnap.exists()) {
+//           const workshopData = docSnap.data();
+//           const orders = workshopData.orders || [];
+
+//           let pendingCount = 0;
+//           let activeCount = 0;
+//           let completedCount = 0;
+//           let totalEarnings = 0;
+
+//           // Process each order in the workshop's orders array
+//           orders.forEach(order => {
+//             const status = order.workshoporderstatus;
+            
+//             if (status === 'pending') {
+//               pendingCount++;
+//             } else if (status === 'active') {
+//               activeCount++;
+//             } else if (status === 'completed') {
+//               completedCount++;
+              
+//               // Calculate earnings only for completed orders
+//               if (Array.isArray(order.userselectedservices)) {
+//                 const orderTotal = order.userselectedservices.reduce((sum, service) => {
+//                   return sum + (parseFloat(service.price) || 0);
+//                 }, 0);
+//                 totalEarnings += orderTotal;
+//               }
+//             }
+//           });
+
+//           // Update state with calculated values
+//           setPendingCount(pendingCount);
+//           setActiveCount(activeCount);
+//           setCompletedCount(completedCount);
+//           setTotalEarnings(totalEarnings);
+
+//           // Optional: If you need to show recent bookings, fetch user details
+//           // for orders with status 'pending' or 'active'
+//           fetchRecentBookings(orders.filter(order => 
+//             order.workshoporderstatus === 'pending' || 
+//             order.workshoporderstatus === 'active'
+//           ));
+          
+//           // Optional: If you need to show completed orders
+//           fetchCompletedOrders(orders.filter(order => 
+//             order.workshoporderstatus === 'completed'
+//           ));
+//         } else {
+//           // Workshop document doesn't exist, reset counts
+//           setPendingCount(0);
+//           setActiveCount(0);
+//           setCompletedCount(0);
+//           setTotalEarnings(0);
+//         }
+//       });
+
+//       unsubscribers.push(unsubscribeWorkshop);
+//     } else {
+//       // User logged out, cleanup and reset
+//       unsubscribers.forEach(unsub => unsub());
+//       setPendingCount(0);
+//       setActiveCount(0);
+//       setCompletedCount(0);
+//       setTotalEarnings(0);
+//       setDataDashboard({ recentBookings: [] });
+//       setCompletedOrders([]);
+//     }
+//   });
+
+//   return () => {
+//     // Cleanup on component unmount
+//     unsubscribers.forEach(unsub => unsub());
+//     unsubscribeAuth();
+//   };
+// }, []);
+
+
+  // useEffect(() => {
+  //   const unsubscribers = [];
+  //   let activeOrderIds = new Set();
+  //   let completedOrderIds = new Set();
+  //   let pendingOrderIds = new Set();
+  //   let totalEarningsSoFar = 0;
+
+  //   const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+  //     if (user) {
+  //       const workshopId = user.uid;
+  //       const usersSnapshot = await getDocs(collection(db, 'users'));
+  //       const initialBookings = [];
+  //       const initialCompletedOrders = [];
+
+  //       // Reset counts
+  //       activeOrderIds.clear();
+  //       completedOrderIds.clear();
+  //       pendingOrderIds.clear();
+  //       totalEarningsSoFar = 0;
+
+  //       // Get workshop's current orders to check status
+  //       const workshopRef = doc(db, 'workshops', workshopId);
+  //       const workshopDoc = await getDoc(workshopRef);
+  //       const workshopOrders = workshopDoc.exists() ? workshopDoc.data().orders || [] : [];
+
+  //       for (const userDoc of usersSnapshot.docs) {
+  //         const userData = userDoc.data();
+  //         const orders = userData.orders || [];
+
+  //         for (let index = 0; index < orders.length; index++) {
+  //           const order = orders[index];
+  //           const selectedWorkshop = order.userselectedworkshop;
+
+  //           if (selectedWorkshop && selectedWorkshop.id === workshopId) {
+  //             // Check if this order exists in workshop's orders array
+  //             const matchingWorkshopOrder = workshopOrders.find(
+  //               (wOrder) =>
+  //                 wOrder.userId === userDoc.id &&
+  //                 wOrder.orderId === order.orderId
+  //             );
+
+  //             let orderStatus = 'pending'; // Default status for new orders
+  //             let completedDate = null;
+
+  //             if (matchingWorkshopOrder && matchingWorkshopOrder.workshoporderstatus) {
+  //               orderStatus = matchingWorkshopOrder.workshoporderstatus;
+  //               completedDate = matchingWorkshopOrder.completedDate || null;
+  //             }
+
+  //             const bookingObj = {
+  //               id: userDoc.id,
+  //               customerName: userData.fullName || 'Unknown',
+  //               service: Array.isArray(order.userselectedservices)
+  //                 ? order.userselectedservices
+  //                   .map(service => `${service.name} - ${service.price} PKR`)
+  //                   .join(', ')
+  //                 : 'No Services Selected',
+  //               typeOrder: order.typeOrder || 'N/A',
+  //               status: orderStatus,
+  //               orderIndex: index,
+  //               workshopId: selectedWorkshop.id,
+  //               orderId: order.orderId,
+  //               completedDate: completedDate,
+  //               earnings: orderStatus === 'completed' ?
+  //                 (Array.isArray(order.userselectedservices) ?
+  //                   order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0) : 0
+  //             };
+
+  //             if (orderStatus === 'completed') {
+  //               initialCompletedOrders.push(bookingObj);
+  //             } else {
+  //               initialBookings.push(bookingObj);
+  //             }
+
+  //             // Count orders based on their status
+  //             if (orderStatus === 'active') {
+  //               activeOrderIds.add(order.orderId);
+  //             } else if (orderStatus === 'completed') {
+  //               completedOrderIds.add(order.orderId);
+  //               // Calculate earnings for completed orders
+  //               if (Array.isArray(order.userselectedservices)) {
+  //                 order.userselectedservices.forEach(service => {
+  //                   totalEarningsSoFar += parseFloat(service.price) || 0;
+  //                 });
+  //               }
+  //             } else if (orderStatus === 'pending') {
+  //               pendingOrderIds.add(order.orderId);
+  //             }
+
+  //             // Setup listener for this specific workshop
+  //             const unsubscribe = onSnapshot(workshopRef, (docSnap) => {
+  //               if (docSnap.exists()) {
+  //                 const workshopData = docSnap.data();
+  //                 const currentWorkshopOrders = workshopData.orders || [];
+
+  //                 const currentMatchingOrder = currentWorkshopOrders.find(
+  //                   (wOrder) =>
+  //                     wOrder.userId === userDoc.id &&
+  //                     wOrder.orderId === order.orderId
+  //                 );
+
+  //                 if (currentMatchingOrder && currentMatchingOrder.workshoporderstatus) {
+  //                   const newStatus = currentMatchingOrder.workshoporderstatus;
+  //                   const newCompletedDate = currentMatchingOrder.completedDate || null;
+
+  //                   // Update the booking status in state
+  //                   setDataDashboard(prev => {
+  //                     const updated = prev.recentBookings.map(b => {
+  //                       if (
+  //                         b.id === userDoc.id &&
+  //                         b.orderIndex === index &&
+  //                         b.workshopId === selectedWorkshop.id
+  //                       ) {
+  //                         return {
+  //                           ...b,
+  //                           status: newStatus,
+  //                           completedDate: newCompletedDate
+  //                         };
+  //                       }
+  //                       return b;
+  //                     });
+
+  //                     // If status changed to completed, move to completed orders
+  //                     if (newStatus === 'completed') {
+  //                       const completedOrder = updated.find(b =>
+  //                         b.id === userDoc.id &&
+  //                         b.orderIndex === index &&
+  //                         b.workshopId === selectedWorkshop.id
+  //                       );
+
+  //                       if (completedOrder) {
+  //                         // Calculate earnings for this completed order
+  //                         const earnings = Array.isArray(order.userselectedservices) ?
+  //                           order.userselectedservices.reduce((sum, service) => sum + (parseFloat(service.price) || 0), 0) : 0;
+
+  //                         completedOrder.earnings = earnings;
+  //                         completedOrder.completedDate = newCompletedDate;
+
+  //                         // Add to completed orders
+  //                         setCompletedOrders(prevCompleted => {
+  //                           const exists = prevCompleted.some(co =>
+  //                             co.id === completedOrder.id &&
+  //                             co.orderIndex === completedOrder.orderIndex &&
+  //                             co.workshopId === completedOrder.workshopId
+  //                           );
+
+  //                           if (!exists) {
+  //                             return [...prevCompleted, completedOrder];
+  //                           }
+  //                           return prevCompleted.map(co =>
+  //                             co.id === completedOrder.id &&
+  //                               co.orderIndex === completedOrder.orderIndex &&
+  //                               co.workshopId === completedOrder.workshopId
+  //                               ? completedOrder : co
+  //                           );
+  //                         });
+
+  //                         // Remove from recent bookings
+  //                         return {
+  //                           ...prev,
+  //                           recentBookings: updated.filter(b =>
+  //                             !(b.id === userDoc.id &&
+  //                               b.orderIndex === index &&
+  //                               b.workshopId === selectedWorkshop.id)
+  //                           )
+  //                         };
+  //                       }
+  //                     }
+
+  //                     return { ...prev, recentBookings: updated };
+  //                   });
+  //                 }
+
+  //                 // Recalculate counts based on current workshop orders
+  //                 const newActiveIds = new Set();
+  //                 const newCompletedIds = new Set();
+  //                 const newPendingIds = new Set();
+  //                 let newTotalEarnings = 0;
+
+  //                 // Get all orders for this workshop from users collection
+  //                 const allWorkshopOrders = [];
+  //                 [...initialBookings, ...initialCompletedOrders].forEach(booking => {
+  //                   const workshopOrder = currentWorkshopOrders.find(
+  //                     wo => wo.userId === booking.id && wo.orderId === booking.orderId
+  //                   );
+
+  //                   if (workshopOrder) {
+  //                     allWorkshopOrders.push(workshopOrder);
+  //                   } else {
+  //                     // If not in workshop orders, it's pending
+  //                     newPendingIds.add(booking.orderId);
+  //                   }
+  //                 });
+
+  //                 // Count based on workshop orders status
+  //                 allWorkshopOrders.forEach(order => {
+  //                   if (order.workshoporderstatus === 'active') {
+  //                     newActiveIds.add(order.orderId);
+  //                   } else if (order.workshoporderstatus === 'completed') {
+  //                     newCompletedIds.add(order.orderId);
+  //                     // Calculate earnings
+  //                     if (Array.isArray(order.userselectedservices)) {
+  //                       order.userselectedservices.forEach(service => {
+  //                         newTotalEarnings += parseFloat(service.price) || 0;
+  //                       });
+  //                     }
+  //                   } else if (order.workshoporderstatus === 'pending') {
+  //                     newPendingIds.add(order.orderId);
+  //                   }
+  //                 });
+
+  //                 setActiveCount(newActiveIds.size);
+  //                 setCompletedCount(newCompletedIds.size);
+  //                 setPendingCount(newPendingIds.size);
+  //                 setTotalEarnings(newTotalEarnings);
+  //               }
+  //             });
+
+  //             unsubscribers.push(unsubscribe);
+  //           }
+  //         }
+  //       }
+
+  //       // Set initial counts and data
+  //       setActiveCount(activeOrderIds.size);
+  //       setCompletedCount(completedOrderIds.size);
+  //       setPendingCount(pendingOrderIds.size);
+  //       setTotalEarnings(totalEarningsSoFar);
+  //       setDataDashboard(prev => ({ ...prev, recentBookings: initialBookings }));
+  //       setCompletedOrders(initialCompletedOrders);
+
+  //     } else {
+  //       // User Logout — listeners close karo, data clear karo
+  //       unsubscribers.forEach(unsub => unsub());
+  //       setDataDashboard({ recentBookings: [] });
+  //       setCompletedOrders([]);
+  //       setActiveCount(0);
+  //       setCompletedCount(0);
+  //       setPendingCount(0);
+  //       setTotalEarnings(0);
+  //     }
+  //   });
+
+  //   return () => {
+  //     // Component unmount hone par bhi sab cleanup ho
+  //     unsubscribers.forEach(unsub => unsub());
+  //     unsubscribeAuth();
+  //   };
+  // }, []);
 
 
 
@@ -591,20 +1346,36 @@ const AslamDashboard = () => {
 
           // Show already saved selected time slots as cards
           if (data.timeSlots && Array.isArray(data.timeSlots)) {
-            setSelectedTimeSlots(data.timeSlots); // Display saved cards
+  const filteredSelectedSlots = data.timeSlots.filter(slot => slot.available === true);
+  setSelectedTimeSlots(filteredSelectedSlots); // Only show available slots
 
-            // Remove selected slots from available slots
-            const filteredAvailableSlots = allAvailableSlots.filter(availableSlot =>
-              !data.timeSlots.some(selectedSlot =>
-                selectedSlot.time === availableSlot.time && selectedSlot.day === availableSlot.day
-              )
+  // Remove selected from available
+  const filteredAvailableSlots = allAvailableSlots.filter(availableSlot =>
+    !filteredSelectedSlots.some(selectedSlot =>
+      selectedSlot.time === availableSlot.time && selectedSlot.day === availableSlot.day
+    )
+  );
+  setAvailableTimeSlots(filteredAvailableSlots);
+} else {
+  setSelectedTimeSlots([]); // No slots saved yet
+  setAvailableTimeSlots(allAvailableSlots);
+}
 
-            );
-            setAvailableTimeSlots(filteredAvailableSlots);
-          } else {
-            setSelectedTimeSlots([]); // No slots saved yet
-            setAvailableTimeSlots(allAvailableSlots);
-          }
+          // if (data.timeSlots && Array.isArray(data.timeSlots)) {
+          //   setSelectedTimeSlots(data.timeSlots); // Display saved cards
+
+          //   // Remove selected slots from available slots
+          //   const filteredAvailableSlots = allAvailableSlots.filter(availableSlot =>
+          //     !data.timeSlots.some(selectedSlot =>
+          //       selectedSlot.time === availableSlot.time && selectedSlot.day === availableSlot.day
+          //     )
+
+          //   );
+          //   setAvailableTimeSlots(filteredAvailableSlots);
+          // } else {
+          //   setSelectedTimeSlots([]); // No slots saved yet
+          //   setAvailableTimeSlots(allAvailableSlots);
+          // }
 
           // Set all generated slots
           setTimeSlots(allAvailableSlots);
@@ -1810,7 +2581,7 @@ const AslamDashboard = () => {
                 <img
                   src="\assets\images\profile.png"
                   alt="Admin"
-                  className="w-8 h-8 rounded-full"
+                  className="w-10 h-8 rounded-full"
                 />
                 <span className="text-sm font-medium">{fullName}</span>
               </div>
@@ -1854,6 +2625,114 @@ const AslamDashboard = () => {
           {/* Main Content - Margin left to account for sidebar */}
           <div className="flex-1 ml-64 p-8">
             <div className="max-w-7xl mx-auto">
+  {/* Overview Tab */}
+  {activeTab === 'overview' && (
+    <>
+      {renderOverview()}
+      {renderBookings()}
+    </>
+  )}
+
+  {/* Emergency Tab */}
+  {activeTab === 'bookings' && (
+    <>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">All Bookings</h2>
+        {bookings.length === 0 ? (
+          <p className="text-gray-600">No pending emergency bookings found.</p>
+        ) : (
+          <ul className="space-y-4">
+            {bookings.map((booking, index) => (
+              <li key={index} className="border rounded-lg p-4 bg-gray-50">
+                <p><strong>User:</strong> {booking.userName}</p>
+                <p><strong>Problem:</strong> {booking.problem}</p>
+                <p><strong>Address:</strong> {booking.address}</p>
+                <button
+                  className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 active:bg-green-800 transition"
+                  onClick={() => handleAcceptRequest(booking)}
+                >
+                  Accept Request
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+        <h2 className="text-xl font-semibold mb-4">Your Booked Emergency Users</h2>
+        {loading ? (
+          <p className="text-gray-500">Loading confirmed bookings...</p>
+        ) : confirmedEmergencies.length === 0 ? (
+          <p className="text-gray-500">No confirmed bookings yet.</p>
+        ) : (
+          <ul className="space-y-4">
+            {confirmedEmergencies.map((user, index) => (
+              <li
+                key={index}
+                className="border rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-colors"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <p>
+                    <strong className="text-green-700">Email:</strong>{' '}
+                    <span className="text-gray-800">{user.userEmail}</span>
+                  </p>
+                  <p>
+                    <strong className="text-green-700">Name:</strong>{' '}
+                    <span className="text-gray-800">{user.userName}</span>
+                  </p>
+                  <p>
+                    <strong className="text-green-700">Phone:</strong>{' '}
+                    <span className="text-gray-800">{user.userPhone}</span>
+                  </p>
+                  <p className="md:col-span-2">
+                    <strong className="text-green-700">Address:</strong>{' '}
+                    <span className="text-gray-800">{user.address}</span>
+                  </p>
+                  <p className="md:col-span-2">
+                    <strong className="text-green-700">User ID:</strong>{' '}
+                    <span className="text-gray-800">{user.userId}</span>
+                  </p>
+                </div>
+
+                <div className="mt-3 flex justify-between items-center gap-3 flex-wrap">
+                  <div className="text-xs text-gray-500">
+                    Status:{' '}
+                    <span className="text-green-600 font-medium">Confirmed</span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => navigate(`/view-location/${user.userId}`)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      View Location
+                    </button>
+
+                    <button
+                      onClick={() => handleCompleteRequest(user, index)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Mark as Completed
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
+  )}
+
+  {/* Time Slots Tab - ONLY render renderTimeSlots here */}
+  {activeTab === 'customers' && renderTimeSlots()}
+
+  {/* Services Tab */}
+  {activeTab === 'services' && renderServices()}
+</div>
+
+            {/* <div className="max-w-7xl mx-auto">
               {activeTab === 'overview' && (
                 <>
                   {renderOverview()}
@@ -1953,7 +2832,7 @@ const AslamDashboard = () => {
                 </>
               )}
               {activeTab === 'services' && renderServices()}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

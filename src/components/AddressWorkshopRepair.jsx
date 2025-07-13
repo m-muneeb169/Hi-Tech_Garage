@@ -229,11 +229,14 @@ const AddressWorkshopRepair = () => {
   const [showDialog, setShowDialog] = useState(false);
   const navigate = useNavigate();
 
+  //firstchange
   const [userData, setUserData] = useState({
     email: '',
     workshopName: '',
     totalPrice: 0,
     services: [],
+    workshopId: '',
+    selectedTimeSlot: null,
   });
 
   useEffect(() => {
@@ -257,6 +260,9 @@ const AddressWorkshopRepair = () => {
               workshopName: latestOrder?.userselectedworkshop?.name || '',
               totalPrice: latestOrder?.totalprice || 0,
               services: latestOrder?.userselectedservices || [],
+              //2
+              workshopId: latestOrder?.userselectedworkshop?.id || '',
+              selectedTimeSlot: latestOrder?.usertimeselected || null,
             });
           } else {
             // Clear data if no pending orders
@@ -266,6 +272,9 @@ const AddressWorkshopRepair = () => {
               workshopName: '',
               totalPrice: 0,
               services: [],
+              //3
+              workshopId: '',
+              selectedTimeSlot: null,
             });
           }
         } else {
@@ -284,73 +293,196 @@ const AddressWorkshopRepair = () => {
     setShowDialog(true);
   };
 
-  const handleConfirmBooking = async () => {
-    const auth = getAuth();
-    const db = getFirestore();
-    const user = auth.currentUser;
 
-    if (!user) {
-      alert("User not logged in.");
+  const updateSlotAvailability = async (workshopId, slotId) => {
+  try {
+    const db = getFirestore();
+    const workshopRef = doc(db, 'workshops', workshopId);
+    const workshopSnap = await getDoc(workshopRef);
+    if (!workshopSnap.exists()) return;
+    const workshopData = workshopSnap.data();
+
+    const updatedSlots = (workshopData.timeSlots || []).map(slot => {
+      if (slot.id === slotId) {
+        return { ...slot, available: false };
+      }
+      return slot;
+    });
+
+    await updateDoc(workshopRef, { timeSlots: updatedSlots });
+    console.log('Time slot availability updated.');
+  } catch (error) {
+    console.error('Failed to update time slot:', error);
+  }
+};
+
+  
+    // const updateSlotAvailability = async (workshopId, slotId) => {
+    //   try {
+    //     const db = getFirestore();
+    //     const workshopRef = doc(db, 'workshops', workshopId);
+    //     const workshopSnap = await getDoc(workshopRef);
+    //     if (!workshopSnap.exists()) return;
+    //     const workshopData = workshopSnap.data();
+  
+    //     const updatedSlots = (workshopData.timeSlots || []).map(slot => {
+    //       if (slot.id === slotId) {
+    //         return { ...slot, available: false };
+    //       }
+    //       return slot;
+    //     });
+  
+    //     await updateDoc(workshopRef, { timeSlots: updatedSlots });
+    //     console.log('Time slot availability updated.');
+    //   } catch (error) {
+    //     console.error('Failed to update time slot:', error);
+    //   }
+    // };
+
+const handleConfirmBooking = async () => {
+  const auth = getAuth();
+  const db = getFirestore();
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("User not logged in.");
+    return;
+  }
+
+  const userRef = doc(db, "users", user.uid);
+
+  try {
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      console.log("User document not found");
       return;
     }
 
-    const userRef = doc(db, "users", user.uid);
+    const data = userSnap.data();
+    const orders = data.orders || [];
 
-    try {
-      const userSnap = await getDoc(userRef);
+    if (orders.length === 0) {
+      console.log("No orders to update");
+      return;
+    }
 
-      if (!userSnap.exists()) {
-        console.log("User document not found");
-        return;
-      }
+    const updatedOrders = [...orders];
+    const latestOrderIndex = updatedOrders.length - 1;
+    const latestOrder = updatedOrders[latestOrderIndex];
 
-      const data = userSnap.data();
-      const orders = data.orders || [];
+    const orderId = uuidv4();
 
-      if (orders.length === 0) {
-        console.log("No orders to update");
-        return;
-      }
+    const confirmedOrder = {
+      ...latestOrder,
+      orderStatus: "confirmed",
+      userId: user.uid,
+      orderId: orderId,
+      orderPhoneNumber: phone,
+      createdAt: new Date().toISOString(), // ✅ Added createdAt field
+    };
 
-      const updatedOrders = [...orders];
-      const latestOrderIndex = updatedOrders.length - 1;
-      const latestOrder = updatedOrders[latestOrderIndex];
+    updatedOrders[latestOrderIndex] = confirmedOrder;
 
-      const orderId = uuidv4();
+    await updateDoc(userRef, {
+      orders: updatedOrders,
+    });
 
-      const confirmedOrder = {
-        ...latestOrder,
-        orderStatus: "confirmed",
-        userId: user.uid,
-        orderId: orderId,
-        orderPhoneNumber: phone,
-      };
+    const workshopId = latestOrder?.userselectedworkshop?.id;
 
-      updatedOrders[latestOrderIndex] = confirmedOrder;
+    if (workshopId) {
+      const workshopRef = doc(db, "workshops", workshopId);
+      const workshopSnap = await getDoc(workshopRef);
+      const workshopData = workshopSnap.exists() ? workshopSnap.data() : {};
+      const workshopOrders = workshopData.orders || [];
 
-      await updateDoc(userRef, {
-        orders: updatedOrders,
+      await updateDoc(workshopRef, {
+        orders: [...workshopOrders, confirmedOrder],
       });
 
-      const workshopId = latestOrder?.userselectedworkshop?.id;
-
-      if (workshopId) {
-        const workshopRef = doc(db, "workshops", workshopId);
-        const workshopSnap = await getDoc(workshopRef);
-        const workshopData = workshopSnap.exists() ? workshopSnap.data() : {};
-        const workshopOrders = workshopData.orders || [];
-
-        await updateDoc(workshopRef, {
-          orders: [...workshopOrders, confirmedOrder],
-        });
+      // 🔥 Mark the selected time slot as unavailable
+      const selectedSlotId = latestOrder?.usertimeselected?.id;
+      if (selectedSlotId) {
+        await updateSlotAvailability(workshopId, selectedSlotId);
       }
-
-      console.log("Order confirmed and saved in both collections.");
-      navigate('/');
-    } catch (error) {
-      console.error("Error confirming order:", error);
     }
-  };
+
+    console.log("Order confirmed and saved in both collections. Time slot marked unavailable.");
+    navigate('/');
+  } catch (error) {
+    console.error("Error confirming order:", error);
+  }
+};
+
+
+
+  // const handleConfirmBooking = async () => {
+  //   const auth = getAuth();
+  //   const db = getFirestore();
+  //   const user = auth.currentUser;
+
+  //   if (!user) {
+  //     alert("User not logged in.");
+  //     return;
+  //   }
+
+  //   const userRef = doc(db, "users", user.uid);
+
+  //   try {
+  //     const userSnap = await getDoc(userRef);
+
+  //     if (!userSnap.exists()) {
+  //       console.log("User document not found");
+  //       return;
+  //     }
+
+  //     const data = userSnap.data();
+  //     const orders = data.orders || [];
+
+  //     if (orders.length === 0) {
+  //       console.log("No orders to update");
+  //       return;
+  //     }
+
+  //     const updatedOrders = [...orders];
+  //     const latestOrderIndex = updatedOrders.length - 1;
+  //     const latestOrder = updatedOrders[latestOrderIndex];
+
+  //     const orderId = uuidv4();
+
+  //     const confirmedOrder = {
+  //       ...latestOrder,
+  //       orderStatus: "confirmed",
+  //       userId: user.uid,
+  //       orderId: orderId,
+  //       orderPhoneNumber: phone,
+  //     };
+
+  //     updatedOrders[latestOrderIndex] = confirmedOrder;
+
+  //     await updateDoc(userRef, {
+  //       orders: updatedOrders,
+  //     });
+
+  //     const workshopId = latestOrder?.userselectedworkshop?.id;
+
+  //     if (workshopId) {
+  //       const workshopRef = doc(db, "workshops", workshopId);
+  //       const workshopSnap = await getDoc(workshopRef);
+  //       const workshopData = workshopSnap.exists() ? workshopSnap.data() : {};
+  //       const workshopOrders = workshopData.orders || [];
+
+  //       await updateDoc(workshopRef, {
+  //         orders: [...workshopOrders, confirmedOrder],
+  //       });
+  //     }
+
+  //     console.log("Order confirmed and saved in both collections.");
+  //     navigate('/');
+  //   } catch (error) {
+  //     console.error("Error confirming order:", error);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
