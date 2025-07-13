@@ -1,5 +1,5 @@
 // import React, { useState, useEffect } from 'react';
-// import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+// import { collection, getDocs, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 // import { getAuth, onAuthStateChanged } from "firebase/auth";
 // import { db } from "../firebase";
 // import { ShoppingCartIcon, MapPinIcon, ClockIcon, CheckCircle2Icon, CalendarIcon, WrenchIcon } from 'lucide-react';
@@ -15,6 +15,7 @@
 //   const [workshops, setWorkshops] = useState([]);
 //   const [timeSlots, setTimeSlots] = useState([]);
 //   const [maintenanceServices, setMaintenanceServices] = useState([]);
+//   const [bookedSlots, setBookedSlots] = useState([]);
 //   const navigate = useNavigate();
 //   const auth = getAuth();
 
@@ -46,11 +47,16 @@
 //               id: service.id || `service-${index}`
 //             }));
 //             setMaintenanceServices(services);
+            
 //             const fullSlots = (data.timeSlots || []).map((slot, index) => ({
 //               ...slot,
 //               id: slot.id || `slot-${index}`
 //             }));
 //             setTimeSlots(fullSlots);
+            
+//             // Get booked slots for this workshop
+//             const booked = data.bookedSlots || [];
+//             setBookedSlots(booked);
 //           }
 //         } catch (error) {
 //           console.error("Error fetching workshop data: ", error);
@@ -58,6 +64,7 @@
 //       } else {
 //         setMaintenanceServices([]);
 //         setTimeSlots([]);
+//         setBookedSlots([]);
 //       }
 //     };
 //     fetchServicesAndSlots();
@@ -72,6 +79,10 @@
 
 //   const isServiceSelected = (serviceId) => {
 //     return selectedServices.some(service => service.id === serviceId);
+//   };
+
+//   const isSlotBooked = (slotId) => {
+//     return bookedSlots.includes(slotId);
 //   };
 
 //   const clearFormData = () => {
@@ -381,24 +392,38 @@
 //                           <p className="text-gray-500">Select a workshop first</p>
 //                         </div>
 //                       ) : (
-//                         timeSlots.map((slot) => (
-//                           <button
-//                             key={slot.id}
-//                             onClick={() => setSelectedTimeSlot(slot)}
-//                             className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${selectedTimeSlot?.id === slot.id
-//                                 ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105'
-//                                 : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-md'
+//                         timeSlots.map((slot) => {
+//                           const isBooked = isSlotBooked(slot.id);
+//                           return (
+//                             <button
+//                               key={slot.id}
+//                               onClick={() => !isBooked && setSelectedTimeSlot(slot)}
+//                               disabled={isBooked}
+//                               className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${
+//                                 isBooked
+//                                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
+//                                   : selectedTimeSlot?.id === slot.id
+//                                   ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105'
+//                                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-md'
 //                               }`}
-//                           >
-//                             <div className="flex items-center justify-between">
-//                               <div>
-//                                 <div className="font-semibold">{slot.day}</div>
-//                                 <div className="text-sm opacity-90">{slot.date}</div>
+//                             >
+//                               <div className="flex items-center justify-between">
+//                                 <div>
+//                                   <div className="font-semibold">{slot.day}</div>
+//                                   <div className="text-sm opacity-90">{slot.date}</div>
+//                                 </div>
+//                                 <div className="flex items-center space-x-2">
+//                                   <div className="font-bold">{slot.time}</div>
+//                                   {isBooked && (
+//                                     <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+//                                       Booked
+//                                     </div>
+//                                   )}
+//                                 </div>
 //                               </div>
-//                               <div className="font-bold">{slot.time}</div>
-//                             </div>
-//                           </button>
-//                         ))
+//                             </button>
+//                           );
+//                         })
 //                       )}
 //                     </div>
 //                   </div>
@@ -451,7 +476,6 @@
 //         </div>
 //       </div>
 
-
 //       <Footer />
 //     </div>
 //   );
@@ -460,11 +484,12 @@
 // export default OnSite;
 
 
+
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from "../firebase";
-import { ShoppingCartIcon, MapPinIcon, ClockIcon, CheckCircle2Icon, CalendarIcon, WrenchIcon } from 'lucide-react';
+import { ShoppingCartIcon, MapPinIcon, ClockIcon, CheckCircle2Icon, CalendarIcon, WrenchIcon, PhoneIcon } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import Header from '../components/header';
 import Footer from '../components/footer';
@@ -478,6 +503,7 @@ function OnSite() {
   const [timeSlots, setTimeSlots] = useState([]);
   const [maintenanceServices, setMaintenanceServices] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
+  const [workshopDetails, setWorkshopDetails] = useState(null);
   const navigate = useNavigate();
   const auth = getAuth();
 
@@ -504,6 +530,14 @@ function OnSite() {
           const workshopDoc = await getDoc(doc(db, "workshops", selectedWorkshop));
           if (workshopDoc.exists()) {
             const data = workshopDoc.data();
+            
+            // Set workshop details including address and mobile number
+            setWorkshopDetails({
+              name: data.workshopName,
+              address: data.address,
+              mobileNo: data.mobileNo
+            });
+            
             const services = (data.services || []).map((service, index) => ({
               ...service,
               id: service.id || `service-${index}`
@@ -527,6 +561,7 @@ function OnSite() {
         setMaintenanceServices([]);
         setTimeSlots([]);
         setBookedSlots([]);
+        setWorkshopDetails(null);
       }
     };
     fetchServicesAndSlots();
@@ -551,6 +586,7 @@ function OnSite() {
     setSelectedWorkshop('');
     setSelectedServices([]);
     setSelectedTimeSlot('');
+    setWorkshopDetails(null);
   };
 
   const addToCart = async () => {
@@ -586,6 +622,7 @@ function OnSite() {
             name: selectedWorkshopData.name
           }
           : null,
+        selectedworkshop: selectedWorkshop,
         usertimeselected: selectedTimeSlot || null,
         totalprice: totalPrice,
         orderStatus: "pending"
@@ -782,6 +819,23 @@ function OnSite() {
                         </svg>
                       </div>
                     </div>
+
+                    {/* Workshop Details */}
+                    {workshopDetails && (
+                      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3">{workshopDetails.name}</h3>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-3">
+                            <MapPinIcon className="w-4 h-4 text-blue-600" />
+                            <span className="text-gray-700">{workshopDetails.address}</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <PhoneIcon className="w-4 h-4 text-blue-600" />
+                            <span className="text-gray-700">{workshopDetails.mobileNo}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Services Selection */}

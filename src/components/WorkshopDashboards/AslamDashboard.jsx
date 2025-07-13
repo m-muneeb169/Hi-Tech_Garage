@@ -28,6 +28,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+
 const AslamDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   // const [showNotifications, setShowNotifications] = useState(false);
@@ -982,40 +983,40 @@ const AslamDashboard = () => {
 
 
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const allBookings = [];
+  // useEffect(() => {
+  //   const fetchBookings = async () => {
+  //     try {
+  //       const usersSnapshot = await getDocs(collection(db, 'users'));
+  //       const allBookings = [];
 
-        usersSnapshot.forEach((doc) => {
-          const userData = doc.data();
-          const userId = doc.id;
-          const userName = userData.fullName || userData.name || userData.email || 'Unknown User';
-          const emergencies = userData.emergency || [];
+  //       usersSnapshot.forEach((doc) => {
+  //         const userData = doc.data();
+  //         const userId = doc.id;
+  //         const userName = userData.fullName || userData.name || userData.email || 'Unknown User';
+  //         const emergencies = userData.emergency || [];
 
-          emergencies.forEach((booking) => {
-            if (booking.status && booking.status.toLowerCase() === 'pending') {
-              allBookings.push({
-                userId,
-                userName,
-                problem: booking.problem || 'No problem specified',
-                address: booking.address || 'No address provided',
-                emergencyId: booking.emergencyId || `${userId}_${Date.now()}`,
-              });
-            }
-          });
-        });
+  //         emergencies.forEach((booking) => {
+  //           if (booking.status && booking.status.toLowerCase() === 'pending') {
+  //             allBookings.push({
+  //               userId,
+  //               userName,
+  //               problem: booking.problem || 'No problem specified',
+  //               address: booking.address || 'No address provided',
+  //               emergencyId: booking.emergencyId || `${userId}_${Date.now()}`,
+  //             });
+  //           }
+  //         });
+  //       });
 
-        console.log("Fetched bookings:", allBookings);
-        setBookings(allBookings);
-      } catch (error) {
-        console.error('Error fetching emergency bookings:', error);
-      }
-    };
+  //       console.log("Fetched bookings:", allBookings);
+  //       setBookings(allBookings);
+  //     } catch (error) {
+  //       console.error('Error fetching emergency bookings:', error);
+  //     }
+  //   };
 
-    fetchBookings();
-  }, []);
+  //   fetchBookings();
+  // }, []);
 
 
   const handlePopState = () => {
@@ -1023,7 +1024,15 @@ const AslamDashboard = () => {
     navigate('/');
   };
 
+  useEffect(() => {
   window.addEventListener('popstate', handlePopState);
+  return () => {
+    window.removeEventListener('popstate', handlePopState);
+  };
+}, []);
+
+
+  // window.addEventListener('popstate', handlePopState);
 
   const handleAcceptRequest = async (booking) => {
     console.log("Booking object received:", booking);
@@ -1799,7 +1808,7 @@ const AslamDashboard = () => {
                 onClick={() => navigate('/workshop-profile', { state: { fromDashboard: true } })}
               >
                 <img
-                  src="./assets/images/team/bilal.jpg"
+                  src="\assets\images\profile.png"
                   alt="Admin"
                   className="w-8 h-8 rounded-full"
                 />
@@ -1820,11 +1829,11 @@ const AslamDashboard = () => {
               <div className="space-y-2">
                 {[
                   { key: 'overview', icon: LayoutGrid, label: 'Overview' },
-                  { key: 'bookings', icon: Calendar, label: 'Bookings' },
-                  { key: 'customers', icon: Users, label: 'Customers' },
+                  { key: 'bookings', icon: Calendar, label: 'Emergency' },
+                  { key: 'customers', icon: Users, label: 'Time Slots' },
                   { key: 'services', icon: Wrench, label: 'Services' },
-                  { key: 'analytics', icon: BarChart, label: 'Analytics' },
-                  { key: 'settings', icon: Settings, label: 'Settings' },
+                  // { key: 'analytics', icon: BarChart, label: 'Analytics' },
+                  // { key: 'settings', icon: Settings, label: 'Settings' },
                 ].map(({ key, icon: Icon, label }) => (
                   <button
                     key={key}
@@ -1950,7 +1959,7 @@ const AslamDashboard = () => {
       </div>
     </div>
   );
-  window.removeEventListener('popstate', handlePopState);
+  // window.removeEventListener('popstate', handlePopState);
 };
 
 export default AslamDashboard;
