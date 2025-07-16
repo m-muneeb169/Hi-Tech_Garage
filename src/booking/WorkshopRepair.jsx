@@ -74,38 +74,6 @@ function WorkshopRepair() {
   fetchServicesAndSlots();
 }, [selectedWorkshop]);
 
-
-
-
-  // useEffect(() => {
-  //   const fetchServicesAndSlots = async () => {
-  //     if (selectedWorkshop) {
-  //       try {
-  //         const workshopDoc = await getDoc(doc(db, "workshops", selectedWorkshop));
-  //         if (workshopDoc.exists()) {
-  //           const data = workshopDoc.data();
-  //           const services = (data.services || []).map((service, index) => ({
-  //             ...service,
-  //             id: service.id || `service-${index}`
-  //           }));
-  //           setMaintenanceServices(services);
-  //           const fullSlots = (data.timeSlots || []).map((slot, index) => ({
-  //             ...slot,
-  //             id: slot.id || `slot-${index}`
-  //           }));
-  //           setTimeSlots(fullSlots);
-  //         }
-  //       } catch (error) {
-  //         console.error("Error fetching workshop data: ", error);
-  //       }
-  //     } else {
-  //       setMaintenanceServices([]);
-  //       setTimeSlots([]);
-  //     }
-  //   };
-  //   fetchServicesAndSlots();
-  // }, [selectedWorkshop]);
-
   const toggleService = (service) => {
     setSelectedServices((prevSelected) => {
       const isSelected = prevSelected.some(s => s.id === service.id);
